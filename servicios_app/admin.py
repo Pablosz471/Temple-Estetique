@@ -14,7 +14,7 @@ class ServicioRealizadoAdmin(admin.ModelAdmin):
         "servicio",
         "fecha",
         "monto_servicio",
-        "porcentaje_empleado",
+        "monto_comision",
     )
     search_fields = (
         "empleado__nombre",

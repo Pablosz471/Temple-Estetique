@@ -37,7 +37,6 @@ INSTALLED_APPS = [
     "asistencias_app",
     "servicios_app",
     "liquidaciones_app",
-    "aguinaldos_app",
 ]
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

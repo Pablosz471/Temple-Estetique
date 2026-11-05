@@ -3,7 +3,7 @@ from django.db import models
 class Servicio(models.Model):
     nombre_servicio = models.CharField(max_length=50)
     descripcion = models.CharField(max_length=100)
-
+    precio = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     class Meta:
         db_table = "servicios"
         ordering = ["nombre_servicio"]
@@ -28,8 +28,8 @@ class ServicioRealizado(models.Model):
 
     fecha = models.DateField()
     monto_servicio = models.DecimalField(max_digits=10, decimal_places=2)
-    porcentaje_empleado = models.DecimalField(max_digits=5, decimal_places=2)
-    observacion = models.CharField(max_length=100, blank=True)
+    monto_comision = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    observacion = models.CharField(max_length=200, blank=True)
 
     class Meta:
         db_table = "servicios_realizados"
