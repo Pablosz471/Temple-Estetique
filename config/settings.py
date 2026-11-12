@@ -33,10 +33,11 @@ INSTALLED_APPS = [
     "catalogo",
     "inicio",
     "axes",
-    "empleados_app",
-    "asistencias_app",
-    "servicios_app",
-    "liquidaciones_app",
+    #Aplicaciones del proyecto
+    "apps.empleados_app.apps.EmpleadosAppConfig",
+    "apps.asistencias_app.apps.AsistenciasAppConfig",
+    "apps.servicios_app.apps.ServiciosAppConfig",
+    "apps.liquidaciones_app.apps.LiquidacionesAppConfig",
 ]
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
