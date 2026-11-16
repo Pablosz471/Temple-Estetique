@@ -1,13 +1,13 @@
 /* Cambiá estas variables para adaptar la identidad de tu organización. */
 :root {
-  --marca:#13594f;
-  --marca-oscura:#0b4038;
-  --fondo:#f6f5f1;
+  --marca:#D8B77A;
+  --marca-oscura:#d4a348;
+  --fondo:#FBEBD7;
   --papel:#fff;
-  --texto:#202d29;
-  --suave:#566660;
-  --borde:#d8dfd9;
-  --error:#9b2626;
+  --texto:#6D512A;
+  --suave:#7C6860;
+  --borde:#B88A3B;
+  --error:#D94A3D;
   --radio:12px;
 }
 * {
