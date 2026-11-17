@@ -8,7 +8,7 @@ class RegistroAsistenciaAdmin(admin.ModelAdmin):
         "empleado",
         "fecha_hora_ingreso",
         "fecha_hora_salida",
-        "sueldo_diario",
+        "comision_diaria",
     )
     search_fields = (
         "empleado__nombre",

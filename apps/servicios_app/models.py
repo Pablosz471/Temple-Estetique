@@ -20,6 +20,14 @@ class ServicioRealizado(models.Model):
         related_name="servicios_realizados",
     )
 
+    Registro_asistencia = models.ForeignKey(
+        "asistencias_app.RegistroAsistencia",
+        on_delete=models.PROTECT,
+        related_name="servicios_realizados",
+        null=True,
+        blank=True,
+    )
+
     servicio = models.ForeignKey(
         Servicio,
         on_delete=models.PROTECT,
@@ -28,7 +36,6 @@ class ServicioRealizado(models.Model):
 
     fecha = models.DateField()
     monto_servicio = models.DecimalField(max_digits=10, decimal_places=2)
-    monto_comision = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     observacion = models.CharField(max_length=200, blank=True)
 
     class Meta:
@@ -38,4 +45,9 @@ class ServicioRealizado(models.Model):
         verbose_name_plural = "servicios realizados"
 
     def __str__(self):
-        return f"{self.servicio} - {self.empleado} - {self.fecha}"
+        empleado = (
+            self.Registro_asistencia.empleado
+            if self.Registro_asistencia_id
+            else self.empleado
+        )
+        return f"{self.servicio} - {empleado} - {self.fecha}"

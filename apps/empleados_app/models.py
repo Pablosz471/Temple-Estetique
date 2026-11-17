@@ -60,7 +60,6 @@ class Empleado(models.Model):
 
     def __str__(self):
         return f"{self.nombre} {self.apellido}"
-    
 class HistorialAcceso(models.Model):
     empleado = models.ForeignKey(
         Empleado,
@@ -80,4 +79,4 @@ class HistorialAcceso(models.Model):
         verbose_name_plural = "historiales de acceso"
 
     def __str__(self):
-        return f"{self.empleado} - {self.fecha_hora}"
+        return f"{self.empleado} - {self.accion} - {self.fecha_hora}"

@@ -6,53 +6,54 @@ Inicio
 
 {% block content %}
 
-<p class="antetitulo">Tu espacio de trabajo</p>
+<p class="antetitulo">Temple Estetique · Tu espacio de trabajo</p>
 <div class="encabezado">
 <div>
 <h1>Hola, {{ user.first_name|default:user.username }}.</h1>
-<p>Esta es la información de tu organización.</p>
+<p>Resumen de la actividad del salón.</p>
 </div>
-<a class="boton" href="{% url 'catalogo:crear' %}">Agregar producto</a>
-</div>
-<div class="resumen">
-<a href="{% url 'catalogo:lista' %}">
-<span>Productos registrados</span>
-<strong>{{ productos }}</strong>
-</a>
-<a href="{% url 'catalogo:categorias' %}">
-<span>Categorías</span>
-<strong>{{ categorias }}</strong>
-</a>
 {% if user.is_superuser %}
-<a href="{% url 'cuentas:solicitudes' %}">
-<span>Solicitudes pendientes</span>
-<strong>{{ pendientes }}</strong>
-</a>
+<a class="boton" href="{% url 'operaciones:realizado_crear' %}">Registrar servicio</a>
 {% endif %}
 </div>
+{% if user.is_superuser %}
+<div class="resumen">
+<a href="{% url 'personal:empleados' %}">
+<span>Personal activo</span><strong>{{ empleados_activos }}</strong>
+</a>
+<a href="{% url 'operaciones:servicios' %}">
+<span>Servicios</span><strong>{{ servicios_activos }}</strong>
+</a>
+<a href="{% url 'asistencias:lista' %}">
+<span>Asistencias de hoy</span><strong>{{ asistencias_hoy }}</strong>
+</a>
+<a href="{% url 'liquidaciones:lista' %}">
+<span>Liquidaciones del mes</span><strong>{{ liquidaciones_mes }}</strong>
+</a>
+</div>
+{% endif %}
+{% if user.is_superuser %}
 <div class="encabezado">
-<h2>Últimos productos actualizados</h2>
-<a href="{% url 'catalogo:lista' %}">Ver catálogo completo →</a>
+<h2>Servicios realizados recientemente</h2>
+<a href="{% url 'operaciones:realizados' %}">Ver registros →</a>
 </div>
 <div class="lista-recientes">
-{% for producto in recientes %}
-<a href="{{ producto.get_absolute_url }}">
+{% for realizado in ultimos_realizados %}
+<a href="{% url 'operaciones:realizados' %}">
 <span>
-<strong>{{ producto.nombre }}</strong>
-<small>{{ producto.categoria }} · {{ producto.codigo }}</small>
+<strong>{{ realizado.servicio.nombre_servicio }}</strong>
+<small>{{ realizado.empleado }} · {{ realizado.fecha|date:'d/m/Y' }}</small>
 </span>
-<span>{{ producto.stock }} unidades</span>
+<span>$ {{ realizado.monto_servicio }}</span>
 </a>{% empty %}<div class="vacio">
-<h2>El catálogo está listo para empezar</h2>
-<p>
-{% if user.is_superuser %}
-Creá una categoría y después agregá tu primer producto.
-{% else %}
-Pedile al administrador que cree las categorías para comenzar.
-{% endif %}
-</p>
-<a href="{% url 'catalogo:categorias' %}">Ir a categorías →</a>
+<h2>Todavía no hay servicios registrados</h2>
+<p>Cuando registres un servicio realizado, aparecerá acá.</p>
+<a href="{% url 'operaciones:realizado_crear' %}">Registrar un servicio →</a>
 </div>
 {% endfor %}
+</div>
+{% endif %}
+<div class="accesos-secundarios">
+{% if user.is_superuser %}<a href="{% url 'personal:roles' %}">Administrar roles</a><a href="{% url 'cuentas:solicitudes' %}">Solicitudes de acceso ({{ pendientes }})</a>{% endif %}
 </div>
 {% endblock %}
