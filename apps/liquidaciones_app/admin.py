@@ -9,7 +9,7 @@ class RegistroMensualAdmin(admin.ModelAdmin):
         "mes",
         "anio",
         "total_generado",
-        "total_porcentaje",
+        "total_comisiones",
     )
     search_fields = (
         "empleado__nombre",

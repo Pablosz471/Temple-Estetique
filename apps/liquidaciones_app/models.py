@@ -15,7 +15,7 @@ class RegistroMensual(models.Model):
         decimal_places=2,
         default=0,
     )
-    total_porcentaje = models.DecimalField(
+    total_comisiones = models.DecimalField(
         max_digits=10,
         decimal_places=2,
     )

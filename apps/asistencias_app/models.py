@@ -10,7 +10,7 @@ class RegistroAsistencia(models.Model):
 
     fecha_hora_ingreso = models.DateTimeField()
     fecha_hora_salida = models.DateTimeField(null=True, blank=True)
-    sueldo_diario = models.DecimalField(max_digits=10, decimal_places=2)
+    comision_diaria = models.DecimalField(max_digits=10, decimal_places=2)
     detalle = models.CharField(max_length=150, blank=True)
 
     class Meta:
