@@ -5,8 +5,8 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.db.models import Q, Count
 from django.db.models.deletion import ProtectedError
 from django.shortcuts import redirect
-from .forms import EmpleadoForm, RolForm
-from .models import Empleado, Rol
+from .forms import EmpleadoCrearForm, EmpleadoEditarForm
+from .models import Empleado
 
 
 class AdminMixin(LoginRequiredMixin, UserPassesTestMixin):
@@ -41,8 +41,8 @@ class EmpleadoListView(TablaAdminMixin):
     model = Empleado
     titulo = "Personal"
     descripcion = "Administrá los perfiles, roles y estado del equipo."
-    columnas = ("Empleado", "DNI", "Rol", "Estado")
-    busqueda = ("nombre", "apellido", "dni", "rol__nombre_rol")
+    columnas = ("Empleado", "Usuario", "DNI", "Rol")
+    busqueda = ("nombre", "apellido", "dni", "usuario__username", "rol__nombre_rol")
     crear_url = reverse_lazy("personal:empleado_crear")
     lista_url = reverse_lazy("personal:empleados")
 
@@ -50,25 +50,10 @@ class EmpleadoListView(TablaAdminMixin):
         return super().get_queryset().select_related("rol", "usuario")
 
     def valores(self, obj):
-        return (str(obj), obj.dni, obj.rol.nombre_rol, obj.estado)
+        return (str(obj), obj.usuario.username, obj.dni, obj.rol.nombre_rol)
 
     def editar_url(self, obj): return reverse_lazy("personal:empleado_editar", args=[obj.pk])
     def eliminar_url(self, obj): return reverse_lazy("personal:empleado_eliminar", args=[obj.pk])
-
-
-class RolListView(TablaAdminMixin):
-    model = Rol
-    titulo = "Roles"
-    descripcion = "Definí los roles disponibles para el personal."
-    columnas = ("Rol", "Descripción", "Personas")
-    busqueda = ("nombre_rol", "descripcion")
-    crear_url = reverse_lazy("personal:rol_crear")
-    lista_url = reverse_lazy("personal:roles")
-
-    def get_queryset(self): return super().get_queryset().annotate(personas=Count("empleados"))
-    def valores(self, obj): return (obj.nombre_rol, obj.descripcion, obj.personas)
-    def editar_url(self, obj): return reverse_lazy("personal:rol_editar", args=[obj.pk])
-    def eliminar_url(self, obj): return reverse_lazy("personal:rol_eliminar", args=[obj.pk])
 
 
 class GuardarMixin:
@@ -78,24 +63,25 @@ class GuardarMixin:
 
 
 class EmpleadoCreateView(AdminMixin, GuardarMixin, CreateView):
-    model = Empleado; form_class = EmpleadoForm; template_name = "componentes/crud_form.html"
-    success_url = reverse_lazy("personal:empleados"); titulo = "Agregar empleado"; lista_url = success_url
-
+    model = Empleado
+    form_class = EmpleadoCrearForm
+    template_name = "componentes/crud_form.html"
+    success_url = reverse_lazy("personal:empleados")
+    titulo = "Registrar empleado"
+    lista_url = success_url
 
 class EmpleadoUpdateView(AdminMixin, GuardarMixin, UpdateView):
-    model = Empleado; form_class = EmpleadoForm; template_name = "componentes/crud_form.html"
-    success_url = reverse_lazy("personal:empleados"); titulo = "Editar empleado"; lista_url = success_url
+    model = Empleado
+    form_class = EmpleadoEditarForm
+    template_name = "componentes/crud_form.html"
+    success_url = reverse_lazy("personal:empleados")
+    titulo = "Editar empleado"
+    lista_url = success_url
 
-
-class RolCreateView(AdminMixin, GuardarMixin, CreateView):
-    model = Rol; form_class = RolForm; template_name = "componentes/crud_form.html"
-    success_url = reverse_lazy("personal:roles"); titulo = "Agregar rol"; lista_url = success_url
-
-
-class RolUpdateView(AdminMixin, GuardarMixin, UpdateView):
-    model = Rol; form_class = RolForm; template_name = "componentes/crud_form.html"
-    success_url = reverse_lazy("personal:roles"); titulo = "Editar rol"; lista_url = success_url
-
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["usuario_actual"] = self.request.user
+        return kwargs
 
 class BajaMixin(AdminMixin, DeleteView):
     template_name = "componentes/crud_confirmar.html"
@@ -109,16 +95,22 @@ class BajaMixin(AdminMixin, DeleteView):
         messages.success(self.request, "Registro eliminado.")
         return response
 
-
 class EmpleadoDeleteView(BajaMixin):
-    model = Empleado; success_url = reverse_lazy("personal:empleados"); titulo = "Eliminar empleado"
+    model = Empleado
+    success_url = reverse_lazy("personal:empleados")
+    titulo = "Eliminar empleado"
 
+    def form_valid(self, form):
+        if self.object.usuario_id == self.request.user.pk:
+            messages.error(self.request, "No podés eliminar tu propio perfil.")
+            return redirect(self.success_url)
+        usuario = self.object.usuario
+        respuesta = super().form_valid(form)
+        if self.object.pk is None:  # Django lo pone en None cuando el borrado funcionó
+            usuario.is_active = False
+            usuario.save(update_fields=["is_active"])
+        return respuesta
 
-class RolDeleteView(BajaMixin):
-    model = Rol; success_url = reverse_lazy("personal:roles"); titulo = "Eliminar rol"
-
-
-for _view in (EmpleadoCreateView, EmpleadoUpdateView, RolCreateView, RolUpdateView):
+for _view in (EmpleadoCreateView, EmpleadoUpdateView):
     _view.extra_context = {"titulo": _view.titulo, "lista_url": _view.lista_url}
-for _view in (EmpleadoDeleteView, RolDeleteView):
-    _view.extra_context = {"titulo": _view.titulo, "lista_url": _view.success_url}
+EmpleadoDeleteView.extra_context = {"titulo": EmpleadoDeleteView.titulo, "lista_url": EmpleadoDeleteView.success_url}

@@ -48,7 +48,7 @@ aria-current="page"
 {% if request.resolver_match.namespace == 'operaciones' %}aria-current="page"{% endif %}>Servicios</a>
 <a href="{% url 'operaciones:realizados' %}">Servicios realizados</a>
 <a href="{% url 'personal:empleados' %}"
-{% if request.resolver_match.namespace == 'personal' %}aria-current="page"{% endif %}>Personal y roles</a>
+{% if request.resolver_match.namespace == 'personal' %}aria-current="page"{% endif %}>Personal</a>
 <a href="{% url 'asistencias:lista' %}"
 {% if request.resolver_match.namespace == 'asistencias' %}aria-current="page"{% endif %}>Asistencias</a>
 <a href="{% url 'liquidaciones:lista' %}"

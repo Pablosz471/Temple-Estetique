@@ -4,6 +4,10 @@ from django.db import models
 
 
 class Rol(models.Model):
+
+    ADMINISTRADOR ="Administrador"
+    EMPLEADO ="Empleado"
+
     nombre_rol = models.CharField(max_length=50, unique=True)
     descripcion = models.CharField(max_length=100)
 
@@ -15,6 +19,10 @@ class Rol(models.Model):
 
     def __str__(self):
         return self.nombre_rol
+
+    @property
+    def es_administrador(self):
+        return self.nombre_rol == self.ADMINISTRADOR
 
 
 class Empleado(models.Model):
@@ -47,8 +55,15 @@ class Empleado(models.Model):
         ],
     )
 
-    telefono = models.CharField(max_length=50)
-    direccion = models.CharField(max_length=100)
+    telefono = models.CharField(
+        max_length=20,
+        validators=[
+            RegexValidator(
+                regex=r"^[0-9]{6,20}$",
+                message="Ingresá un teléfono válido: solo se permiten números (entre 6 y 20 dígitos)."            )
+        ],
+    )
+    direccion = models.CharField(max_length=100, blank=True)
     estado = models.CharField(max_length=20, choices=Estado_choices, default="Activo")
     foto_empleado = models.CharField(max_length=100, blank=True)
     especialidad = models.CharField(max_length=100, blank=True)
@@ -80,4 +95,6 @@ class HistorialAcceso(models.Model):
         verbose_name_plural = "historiales de acceso"
 
     def __str__(self):
-        return f"{self.empleado} - {self.fecha_hora}"
+        resultado = "correcto" if self.resultado else "fallido"
+        return f"{self.email_ingresado} - {resultado} - {self.fecha_hora:%d/%m/%Y %H:%M}"
+

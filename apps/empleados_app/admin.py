@@ -5,6 +5,12 @@ from .models import Rol, Empleado, HistorialAcceso
 class RolAdmin(admin.ModelAdmin):
     list_display = ("id", "nombre_rol", "descripcion")
     search_fields = ("nombre_rol",)
+    def has_add_permission(self, request):
+        return False
+    def has_change_permission(self, request, obj=None):
+        return False
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 @admin.register(Empleado)
 class EmpleadoAdmin(admin.ModelAdmin):

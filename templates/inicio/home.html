@@ -54,6 +54,6 @@ Inicio
 </div>
 {% endif %}
 <div class="accesos-secundarios">
-{% if user.is_superuser %}<a href="{% url 'personal:roles' %}">Administrar roles</a><a href="{% url 'cuentas:solicitudes' %}">Solicitudes de acceso ({{ pendientes }})</a>{% endif %}
+{% if user.is_superuser %}<a href="{% url 'cuentas:solicitudes' %}">Solicitudes de acceso ({{ pendientes }})</a>{% endif %}
 </div>
 {% endblock %}
