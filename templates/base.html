@@ -44,9 +44,11 @@ aria-current="page"
 {% endif %}
 >Inicio</a>
 {% if user.is_superuser %}
+{# Servicios y Servicios realizados comparten la app "operaciones": se distinguen por el nombre de la dirección. #}
 <a href="{% url 'operaciones:servicios' %}"
-{% if request.resolver_match.namespace == 'operaciones' %}aria-current="page"{% endif %}>Servicios</a>
-<a href="{% url 'operaciones:realizados' %}">Servicios realizados</a>
+{% if request.resolver_match.namespace == 'operaciones' and 'realizado' not in request.resolver_match.url_name %}aria-current="page"{% endif %}>Servicios</a>
+<a href="{% url 'operaciones:realizados' %}"
+{% if request.resolver_match.namespace == 'operaciones' and 'realizado' in request.resolver_match.url_name %}aria-current="page"{% endif %}>Servicios realizados</a>
 <a href="{% url 'personal:empleados' %}"
 {% if request.resolver_match.namespace == 'personal' %}aria-current="page"{% endif %}>Personal</a>
 <a href="{% url 'asistencias:lista' %}"

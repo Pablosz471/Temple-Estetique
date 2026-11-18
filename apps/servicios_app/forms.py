@@ -2,6 +2,7 @@ from django import forms
 from django.core.validators import MinValueValidator
 from django.db import transaction
 from django.utils import timezone
+from apps.asistencias_app.models import RegistroAsistencia
 from apps.empleados_app.models import Empleado
 from .models import Servicio, ServicioRealizado
 
@@ -32,9 +33,13 @@ class RegistrarServicioForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        empleados = Empleado.objects.filter(
-            estado="Activo", asistencias__fecha_hora_salida__isnull=True
-        )
+        # Se pregunta a la tabla de asistencias quién tiene una abierta. Filtrar con
+        # asistencias__fecha_hora_salida__isnull=True también traería a los empleados
+        # que no tienen ninguna asistencia.
+        con_asistencia_abierta = RegistroAsistencia.objects.filter(
+            fecha_hora_salida__isnull=True
+        ).values("empleado_id")
+        empleados = Empleado.objects.filter(estado="Activo", pk__in=con_asistencia_abierta)
         self.fields["empleado"].queryset = empleados
         if not empleados.exists():
             self.fields["empleado"].help_text = (
@@ -44,6 +49,14 @@ class RegistrarServicioForm(forms.ModelForm):
         self.fields["servicio"].label_from_instance = (
             lambda servicio: f"{servicio.nombre_servicio} — $ {servicio.precio}"
         )
+
+    def clean_empleado(self):
+        empleado = self.cleaned_data["empleado"]
+        if not empleado.asistencias.filter(fecha_hora_salida__isnull=True).exists():
+            raise forms.ValidationError(
+                "Este empleado no tiene una asistencia en curso. Registrá su asistencia primero."
+            )
+        return empleado
 
     @transaction.atomic
     def save(self, commit=True):
