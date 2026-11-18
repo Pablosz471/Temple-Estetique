@@ -24,4 +24,7 @@ class ServicioRealizadoAdmin(admin.ModelAdmin):
         "servicio__nombre_servicio",
     )
     list_filter = ("fecha_hora", "servicio")
+    # El borrado masivo no pasa por ServicioRealizado.delete() y dejaría
+    # comisiones diarias y totales mensuales desactualizados.
+    actions = None
     

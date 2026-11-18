@@ -1,61 +1,61 @@
-from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.db.models import Q
-from django.db.models.deletion import ProtectedError
-from django.shortcuts import redirect
-from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView
-from .forms import RegistroMensualForm
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
+from django.core.paginator import Paginator
+from django.shortcuts import get_object_or_404, render
+from django.utils import timezone
+from apps.empleados_app.models import Empleado
 from .models import RegistroMensual
 
 
-class AdminMixin(LoginRequiredMixin, UserPassesTestMixin):
-    def test_func(self): return self.request.user.is_superuser
+def _exigir_admin(request):
+    if not request.user.is_superuser:
+        raise PermissionDenied
 
 
-class RegistroMensualListView(AdminMixin, ListView):
-    model = RegistroMensual; template_name = "componentes/crud_lista.html"; paginate_by = 20
-    titulo = "Liquidaciones mensuales"; descripcion = "Administrá los totales mensuales por integrante del equipo."
-    columnas = ("Empleado", "Período", "Total generado", "Total de comisión")
-    crear_url = reverse_lazy("liquidaciones:crear"); lista_url = reverse_lazy("liquidaciones:lista")
+@login_required
+def lista(request):
+    _exigir_admin(request)
+    contexto = {
+        "empleados": Empleado.objects.all(),
+        "empleado": None,
+        "registros": [],
+        "meses": [],
+        "mes_elegido": "",
+    }
+    empleado_id = request.GET.get("empleado", "")
+    if empleado_id.isdigit():
+        empleado = get_object_or_404(Empleado, pk=empleado_id)
+        hoy = timezone.localdate()
+        # El mes en curso aparece siempre y con los números al día.
+        RegistroMensual.actualizar(empleado.pk, hoy.year, hoy.month)
+        todos = list(empleado.registros_mensuales.all())
+        meses = [(r.clave, r.periodo) for r in todos]
+        mes_elegido = request.GET.get("mes", "")
+        if mes_elegido not in dict(meses):
+            mes_elegido = ""
+        registros = [r for r in todos if not mes_elegido or r.clave == mes_elegido]
+        for registro in registros:
+            registro.ultimos = list(registro.servicios()[:5])
+            registro.cantidad = registro.servicios().count()
+        contexto.update(
+            empleado=empleado, registros=registros, meses=meses, mes_elegido=mes_elegido
+        )
+    return render(request, "liquidaciones/lista.html", contexto)
 
-    def get_queryset(self):
-        qs = super().get_queryset().select_related("empleado")
-        termino = self.request.GET.get("q", "").strip()[:100]
-        if termino: qs = qs.filter(Q(empleado__nombre__icontains=termino) | Q(empleado__apellido__icontains=termino))
-        return qs
 
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx.update(titulo=self.titulo, descripcion=self.descripcion, columnas=self.columnas,
-                   crear_url=self.crear_url, lista_url=self.lista_url)
-        ctx["filas"] = [{"valores": (str(o.empleado), f"{o.mes:02d}/{o.anio}",
-            f"$ {o.total_generado}", f"$ {o.total_comisiones}"),
-            "editar_url": reverse_lazy("liquidaciones:editar", args=[o.pk]),
-            "eliminar_url": reverse_lazy("liquidaciones:eliminar", args=[o.pk])} for o in ctx["object_list"]]
-        return ctx
-
-
-class GuardarMixin:
-    def form_valid(self, form): messages.success(self.request, "Cambios guardados correctamente."); return super().form_valid(form)
-
-class RegistroMensualCreateView(AdminMixin, GuardarMixin, CreateView):
-    model = RegistroMensual; form_class = RegistroMensualForm; template_name = "componentes/crud_form.html"
-    success_url = reverse_lazy("liquidaciones:lista"); titulo = "Nueva liquidación mensual"
-class RegistroMensualUpdateView(AdminMixin, GuardarMixin, UpdateView):
-    model = RegistroMensual; form_class = RegistroMensualForm; template_name = "componentes/crud_form.html"
-    success_url = reverse_lazy("liquidaciones:lista"); titulo = "Editar liquidación mensual"
-
-class RegistroMensualDeleteView(AdminMixin, DeleteView):
-    model = RegistroMensual; template_name = "componentes/crud_confirmar.html"
-    success_url = reverse_lazy("liquidaciones:lista"); titulo = "Eliminar liquidación mensual"
-    def form_valid(self, form):
-        try: response = super().form_valid(form)
-        except ProtectedError:
-            messages.error(self.request, "No se puede eliminar este registro porque tiene datos relacionados.")
-            return redirect(self.success_url)
-        messages.success(self.request, "Registro eliminado."); return response
-
-for _view in (RegistroMensualCreateView, RegistroMensualUpdateView):
-    _view.extra_context = {"titulo": _view.titulo, "lista_url": _view.success_url}
-RegistroMensualDeleteView.extra_context = {"titulo": RegistroMensualDeleteView.titulo, "lista_url": RegistroMensualDeleteView.success_url}
+@login_required
+def servicios_del_mes(request, pk):
+    _exigir_admin(request)
+    registro = get_object_or_404(RegistroMensual, pk=pk)
+    registro = RegistroMensual.actualizar(registro.empleado_id, registro.anio, registro.mes)
+    pagina = Paginator(registro.servicios(), 20).get_page(request.GET.get("page"))
+    return render(
+        request,
+        "liquidaciones/servicios.html",
+        {
+            "registro": registro,
+            "page_obj": pagina,
+            "paginator": pagina.paginator,
+            "is_paginated": pagina.has_other_pages(),
+        },
+    )

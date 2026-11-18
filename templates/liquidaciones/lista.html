@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Liquidaciones{% endblock %}
+
+{% block content %}
+<p class="antetitulo">Gestión del salón</p>
+<div class="encabezado">
+  <div><h1>Liquidaciones mensuales</h1><p>Lo que generó cada empleado en el mes y su comisión del 40%.</p></div>
+</div>
+
+<form method="get" class="panel">
+  <div class="campo">
+    <label for="empleado">Empleado</label>
+    <select name="empleado" id="empleado" required>
+      <option value="">Elegí un empleado</option>
+      {% for e in empleados %}
+      <option value="{{ e.pk }}"{% if e.pk == empleado.pk %} selected{% endif %}>{{ e }}{% if e.estado != "Activo" %} (inactivo){% endif %}</option>
+      {% endfor %}
+    </select>
+  </div>
+  {% if empleado %}
+  <div class="campo">
+    <label for="mes">Mes</label>
+    <select name="mes" id="mes">
+      <option value="">Todos los meses</option>
+      {% for clave, nombre in meses %}
+      <option value="{{ clave }}"{% if clave == mes_elegido %} selected{% endif %}>{{ nombre }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  {% endif %}
+  <div class="acciones"><button type="submit">Ver registros</button></div>
+</form>
+
+{% if empleado %}
+{% for registro in registros %}
+<section class="panel liquidacion">
+  <div class="encabezado">
+    <h2>{{ registro.periodo }}{% if registro.es_mes_actual %} · En curso{% endif %}</h2>
+  </div>
+  <div class="resumen">
+    <div><span>Servicios realizados</span><strong>{{ registro.cantidad }}</strong></div>
+    <div><span>Total generado</span><strong>$ {{ registro.total_generado }}</strong></div>
+    <div><span>Comisión (40%)</span><strong>$ {{ registro.total_comisiones }}</strong></div>
+  </div>
+  <h3>Últimos servicios realizados</h3>
+  <div class="lista-recientes">
+    {% for realizado in registro.ultimos %}
+    <div class="fila">
+      <span><strong>{{ realizado.servicio.nombre_servicio }}</strong><small>{{ realizado.fecha_hora|date:'d/m/Y H:i' }}</small></span>
+      <span>$ {{ realizado.monto_servicio }}</span>
+    </div>
+    {% empty %}
+    <p>Todavía no hay servicios realizados en este mes.</p>
+    {% endfor %}
+  </div>
+  {% if registro.cantidad %}
+  <div class="acciones"><a class="boton secundario" href="{% url 'liquidaciones:servicios' registro.pk %}">Ver más servicios realizados</a></div>
+  {% endif %}
+</section>
+{% endfor %}
+{% else %}
+<div class="vacio"><h2>Elegí un empleado</h2><p>Vas a ver sus registros mes a mes, empezando por el mes en curso.</p></div>
+{% endif %}
+{% endblock %}

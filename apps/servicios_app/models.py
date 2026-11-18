@@ -2,6 +2,12 @@ from django.utils import timezone
 from django.db import models, transaction
 
 
+def _periodo(empleado_id, fecha_hora):
+    """(empleado, año, mes) de un servicio, en hora de Argentina."""
+    local = timezone.localtime(fecha_hora)
+    return (empleado_id, local.year, local.month)
+
+
 class Servicio(models.Model):
     nombre_servicio = models.CharField(max_length=50)
     descripcion = models.CharField(max_length=100)
@@ -59,18 +65,26 @@ class ServicioRealizado(models.Model):
         if self.pk:
             anterior = (
                 ServicioRealizado.objects.filter(pk=self.pk)
-                .values_list("Registro_asistencia_id", flat=True)
+                .values("Registro_asistencia_id", "empleado_id", "fecha_hora")
                 .first()
             )
         with transaction.atomic():
             super().save(*args, **kwargs)
-            self._actualizar_comisiones(anterior, self.Registro_asistencia_id)
+            asistencias = [self.Registro_asistencia_id]
+            periodos = [_periodo(self.empleado_id, self.fecha_hora)]
+            if anterior:
+                asistencias.append(anterior["Registro_asistencia_id"])
+                periodos.append(_periodo(anterior["empleado_id"], anterior["fecha_hora"]))
+            self._actualizar_comisiones(*asistencias)
+            self._actualizar_meses(*periodos)
 
     def delete(self, *args, **kwargs):
         asistencia_id = self.Registro_asistencia_id
+        periodo = _periodo(self.empleado_id, self.fecha_hora)
         with transaction.atomic():
             resultado = super().delete(*args, **kwargs)
             self._actualizar_comisiones(asistencia_id)
+            self._actualizar_meses(periodo)
         return resultado
 
     @staticmethod
@@ -80,4 +94,11 @@ class ServicioRealizado(models.Model):
         ids = [i for i in asistencia_ids if i]
         for asistencia in RegistroAsistencia.objects.filter(pk__in=ids):
             asistencia.actualizar_comision()
+
+    @staticmethod
+    def _actualizar_meses(*periodos):
+        from apps.liquidaciones_app.models import RegistroMensual
+
+        for empleado_id, anio, mes in set(periodos):
+            RegistroMensual.actualizar(empleado_id, anio, mes)
 
