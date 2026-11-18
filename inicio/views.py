@@ -8,10 +8,13 @@ from apps.servicios_app.models import Servicio, ServicioRealizado
 from apps.asistencias_app.models import RegistroAsistencia
 from apps.liquidaciones_app.models import RegistroMensual
 from cuentas.models import Usuario
+from apps.asistencias_app.services import cerrar_vencidas
 
 
 @login_required
 def home(request):
+    
+    cerrar_vencidas()
     hoy = timezone.localdate()
     return render(
         request,

@@ -3,6 +3,8 @@ from .models import RegistroAsistencia
 
 @admin.register(RegistroAsistencia)
 class RegistroAsistenciaAdmin(admin.ModelAdmin):
+    
+    readonly_fields = ("comision_diaria",)
     list_display = (
         "id",
         "empleado",

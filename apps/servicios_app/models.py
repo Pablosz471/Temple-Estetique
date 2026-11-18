@@ -1,4 +1,5 @@
-from django.db import models
+from django.db import models, transaction
+
 
 class Servicio(models.Model):
     nombre_servicio = models.CharField(max_length=50)
@@ -12,6 +13,7 @@ class Servicio(models.Model):
 
     def __str__(self):
         return self.nombre_servicio
+
 
 class ServicioRealizado(models.Model):
     empleado = models.ForeignKey(
@@ -51,3 +53,31 @@ class ServicioRealizado(models.Model):
             else self.empleado
         )
         return f"{self.servicio} - {empleado} - {self.fecha}"
+
+    def save(self, *args, **kwargs):
+        anterior = None
+        if self.pk:
+            anterior = (
+                ServicioRealizado.objects.filter(pk=self.pk)
+                .values_list("Registro_asistencia_id", flat=True)
+                .first()
+            )
+        with transaction.atomic():
+            super().save(*args, **kwargs)
+            self._actualizar_comisiones(anterior, self.Registro_asistencia_id)
+
+    def delete(self, *args, **kwargs):
+        asistencia_id = self.Registro_asistencia_id
+        with transaction.atomic():
+            resultado = super().delete(*args, **kwargs)
+            self._actualizar_comisiones(asistencia_id)
+        return resultado
+
+    @staticmethod
+    def _actualizar_comisiones(*asistencia_ids):
+        from apps.asistencias_app.models import RegistroAsistencia
+
+        ids = [i for i in asistencia_ids if i]
+        for asistencia in RegistroAsistencia.objects.filter(pk__in=ids):
+            asistencia.actualizar_comision()
+
