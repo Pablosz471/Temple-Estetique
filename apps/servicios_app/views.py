@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Q
@@ -5,7 +6,8 @@ from django.db.models.deletion import ProtectedError
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
-from .forms import ServicioForm, ServicioRealizadoForm
+from .forms import ServicioForm, RegistrarServicioForm, ObservacionServicioForm
+from apps.asistencias_app.services import cerrar_vencidas
 from .models import Servicio, ServicioRealizado
 
 
@@ -24,10 +26,8 @@ class TablaAdminMixin(AdminMixin, ListView):
         return qs
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx.update(titulo=self.titulo, descripcion=self.descripcion, columnas=self.columnas,
-                   crear_url=self.crear_url, lista_url=self.lista_url)
-        ctx["filas"] = [{"valores": self.valores(obj), "editar_url": self.editar_url(obj),
-                         "eliminar_url": self.eliminar_url(obj)} for obj in ctx["object_list"]]
+        ctx.update(titulo=self.titulo, descripcion=self.descripcion, columnas=self.columnas, crear_url=self.crear_url, lista_url=self.lista_url)
+        ctx["filas"] = [{"valores": self.valores(obj), "editar_url": self.editar_url(obj), "eliminar_url": self.eliminar_url(obj)} for obj in ctx["object_list"]]
         return ctx
 
 
@@ -41,27 +41,25 @@ class ServicioListView(TablaAdminMixin):
 
 
 class RealizadoListView(TablaAdminMixin):
-    model = ServicioRealizado; titulo = "Servicios realizados"; descripcion = "Consultá y corregí los trabajos registrados."
-    columnas = ("Fecha", "Servicio", "Empleado", "Monto")
-    busqueda = (
-        "servicio__nombre_servicio",
-        "empleado__nombre",
-        "empleado__apellido",
-        "Registro_asistencia__empleado__nombre",
-        "Registro_asistencia__empleado__apellido",
-    )
-    crear_url = reverse_lazy("operaciones:realizado_crear"); lista_url = reverse_lazy("operaciones:realizados")
+    model = ServicioRealizado
+    titulo = "Servicios realizados"
+    descripcion = "Consultá los trabajos registrados."
+    columnas = ("Fecha y hora", "Servicio", "Empleado", "Monto")
+    busqueda = ("servicio__nombre_servicio", "empleado__nombre", "empleado__apellido")
+    crear_url = reverse_lazy("operaciones:realizado_crear")
+    lista_url = reverse_lazy("operaciones:realizados")
+
     def get_queryset(self):
-        return super().get_queryset().select_related(
-            "servicio", "empleado", "Registro_asistencia__empleado"
-        )
+        return super().get_queryset().select_related("servicio", "empleado")
+
     def valores(self, o):
         return (
-            o.fecha.strftime("%d/%m/%Y"),
+            timezone.localtime(o.fecha_hora).strftime("%d/%m/%Y %H:%M"),
             o.servicio.nombre_servicio,
-            str(o.Registro_asistencia.empleado if o.Registro_asistencia_id else o.empleado),
+            str(o.empleado),
             f"$ {o.monto_servicio}",
         )
+
     def editar_url(self, o): return reverse_lazy("operaciones:realizado_editar", args=[o.pk])
     def eliminar_url(self, o): return reverse_lazy("operaciones:realizado_eliminar", args=[o.pk])
 
@@ -74,10 +72,24 @@ class ServicioCreateView(AdminMixin, GuardarMixin, CreateView):
     model = Servicio; form_class = ServicioForm; template_name = "componentes/crud_form.html"; success_url = reverse_lazy("operaciones:servicios"); titulo = "Agregar servicio"
 class ServicioUpdateView(AdminMixin, GuardarMixin, UpdateView):
     model = Servicio; form_class = ServicioForm; template_name = "componentes/crud_form.html"; success_url = reverse_lazy("operaciones:servicios"); titulo = "Editar servicio"
+
 class RealizadoCreateView(AdminMixin, GuardarMixin, CreateView):
-    model = ServicioRealizado; form_class = ServicioRealizadoForm; template_name = "componentes/crud_form.html"; success_url = reverse_lazy("operaciones:realizados"); titulo = "Registrar servicio realizado"
+    model = ServicioRealizado
+    form_class = RegistrarServicioForm
+    template_name = "componentes/crud_form.html"
+    success_url = reverse_lazy("operaciones:realizados")
+    titulo = "Registrar servicio realizado"
+
+    def get(self, request, *args, **kwargs):
+        cerrar_vencidas()
+        return super().get(request, *args, **kwargs)
+
 class RealizadoUpdateView(AdminMixin, GuardarMixin, UpdateView):
-    model = ServicioRealizado; form_class = ServicioRealizadoForm; template_name = "componentes/crud_form.html"; success_url = reverse_lazy("operaciones:realizados"); titulo = "Editar servicio realizado"
+    model = ServicioRealizado
+    form_class = ObservacionServicioForm
+    template_name = "componentes/crud_form.html"
+    success_url = reverse_lazy("operaciones:realizados")
+    titulo = "Editar observación"
 
 
 class BajaMixin(AdminMixin, DeleteView):

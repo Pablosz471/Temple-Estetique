@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django.db import models, transaction
 
 
@@ -35,14 +36,13 @@ class ServicioRealizado(models.Model):
         on_delete=models.PROTECT,
         related_name="realizaciones",
     )
-
-    fecha = models.DateField()
+    fecha_hora = models.DateTimeField()
     monto_servicio = models.DecimalField(max_digits=10, decimal_places=2)
     observacion = models.CharField(max_length=200, blank=True)
 
     class Meta:
         db_table = "servicios_realizados"
-        ordering = ["-fecha"]
+        ordering = ["-fecha_hora", "-pk"]
         verbose_name = "servicio realizado"
         verbose_name_plural = "servicios realizados"
 
@@ -52,7 +52,7 @@ class ServicioRealizado(models.Model):
             if self.Registro_asistencia_id
             else self.empleado
         )
-        return f"{self.servicio} - {empleado} - {self.fecha}"
+        return f"{self.servicio} - {empleado} - {timezone.localtime(self.fecha_hora):%d/%m/%Y %H:%M}"
 
     def save(self, *args, **kwargs):
         anterior = None

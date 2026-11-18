@@ -42,7 +42,7 @@ Inicio
 <a href="{% url 'operaciones:realizados' %}">
 <span>
 <strong>{{ realizado.servicio.nombre_servicio }}</strong>
-<small>{{ realizado.empleado }} · {{ realizado.fecha|date:'d/m/Y' }}</small>
+<small>{{ realizado.empleado }} · {{ realizado.fecha_hora|date:'d/m/Y H:i' }}</small>
 </span>
 <span>$ {{ realizado.monto_servicio }}</span>
 </a>{% empty %}<div class="vacio">

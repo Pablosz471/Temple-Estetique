@@ -13,7 +13,7 @@ class ServicioRealizadoAdmin(admin.ModelAdmin):
         "empleado",
         "Registro_asistencia",
         "servicio",
-        "fecha",
+        "fecha_hora",
         "monto_servicio",
     )
     search_fields = (
@@ -23,5 +23,5 @@ class ServicioRealizadoAdmin(admin.ModelAdmin):
         "Registro_asistencia__empleado__apellido",
         "servicio__nombre_servicio",
     )
-    list_filter = ("fecha", "servicio")
+    list_filter = ("fecha_hora", "servicio")
     
