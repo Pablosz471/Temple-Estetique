@@ -6,24 +6,23 @@ Iniciar sesión
 
 {% block content %}
 <div class="acceso">
-<section class="introduccion">
-<p class="antetitulo">Belleza, bienestar y confianza</p>
-<h1>Bienvenida a<br>Temple Estetique.</h1>
-<p>Un espacio de trabajo para acompañar cada detalle del salón.</p>
-<div class="nota">El acceso requiere una cuenta aprobada por el administrador.</div>
-</section>
-<section class="panel">
-<div class="auth-marca" aria-label="Temple Estetique">
-<span class="auth-emblema" aria-hidden="true">T</span>
-<strong>TEMPLE</strong><small>ESTÉTIQUE</small>
-</div>
-<h2>Iniciar sesión</h2>
-<p>Ingresá con tu nombre de usuario y contraseña.</p>
-<form method="post">{% csrf_token %}{% include 'componentes/formulario.html' %}<input type="hidden" name="next" value="{{ next }}">
-<button class="ancho" type="submit">Ingresar al sistema</button>
-</form>
-<p class="pie-form">¿Es tu primera vez? <a href="{% url 'cuentas:registro' %}">Solicitá acceso</a>.</p>
-<p class="ayuda">Si olvidaste tu contraseña, contactá al administrador.</p>
-</section>
+    <section class="introduccion">
+        <p class="antetitulo">Belleza, bienestar y confianza</p>
+        <h1>Bienvenida a<br>Temple Estetique.</h1>
+        <p>Un espacio de trabajo para acompañar cada detalle del salón.</p>
+        <div class="nota">Las cuentas deben ser creadas por el administrador.</div>
+    </section>
+    <section class="panel">
+        <div class="auth-marca" aria-label="Temple Estetique">
+            <span class="auth-emblema" aria-hidden="true">T</span>
+            <strong>TEMPLE</strong><small>ESTÉTIQUE</small>
+        </div>
+        <h2>Iniciar sesión</h2>
+        <p>Ingresá con tu nombre de usuario y contraseña.</p>
+        <form method="post">{% csrf_token %}{% include 'componentes/formulario.html' %}<input type="hidden" name="next" value="{{ next }}">
+            <button class="ancho" type="submit">Ingresar al sistema</button>
+        </form>
+        <p class="ayuda">Si olvidaste tu contraseña, contactá al administrador.</p>
+    </section>
 </div>
 {% endblock %}

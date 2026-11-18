@@ -7,7 +7,6 @@ from apps.empleados_app.models import Empleado
 from apps.servicios_app.models import Servicio, ServicioRealizado
 from apps.asistencias_app.models import RegistroAsistencia
 from apps.liquidaciones_app.models import RegistroMensual
-from cuentas.models import Usuario
 from apps.asistencias_app.services import cerrar_vencidas
 
 
@@ -20,11 +19,6 @@ def home(request):
         request,
         "inicio/home.html",
         {
-            "pendientes": (
-                Usuario.objects.filter(estado="pendiente").count()
-                if request.user.is_superuser
-                else None
-            ),
             "empleados_activos": Empleado.objects.filter(estado="Activo").count(),
             "servicios_activos": Servicio.objects.count(),
             "asistencias_hoy": RegistroAsistencia.objects.filter(fecha_hora_ingreso__date=hoy).count(),
