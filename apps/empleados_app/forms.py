@@ -42,13 +42,13 @@ class EmpleadoCrearForm(EmpleadoBaseForm):
     def clean_username(self):
         valor = self.cleaned_data["username"].strip().lower()
         if Usuario.objects.filter(username__iexact=valor).exists():
-            raise forms.ValidationError("Ese nombre de usuario ya está en uso.")
+            raise forms.ValidationError("El nombre de usuario ya está en uso.")
         return valor
 
     def clean_email(self):
         valor = self.cleaned_data["email"].strip().lower()
         if Usuario.objects.filter(email__iexact=valor).exists():
-            raise forms.ValidationError("Ese correo ya está registrado.")
+            raise forms.ValidationError("El correo ya está registrado.")
         return valor
 
     def clean(self):
@@ -110,7 +110,7 @@ class EmpleadoEditarForm(EmpleadoBaseForm):
         rol = self.cleaned_data["rol"]
         es_uno_mismo = self.usuario_actual and self.instance.usuario_id == self.usuario_actual.pk
         if es_uno_mismo and not rol.es_administrador:
-            raise forms.ValidationError("No podés quitarte a vos mismo el rol de Administrador.")
+            raise forms.ValidationError("No puedes quitarte el rol de Administrador.")
         return rol
 
     @transaction.atomic

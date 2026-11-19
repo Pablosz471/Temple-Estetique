@@ -32,7 +32,7 @@ class TablaAdminMixin(AdminMixin, ListView):
 
 
 class ServicioListView(TablaAdminMixin):
-    model = Servicio; titulo = "Servicios"; descripcion = "Mantené actualizado el catálogo de tratamientos."
+    model = Servicio; titulo = "Servicios"; descripcion = "Servicios disponibles en la estética."
     columnas = ("Servicio", "Descripción", "Precio"); busqueda = ("nombre_servicio", "descripcion")
     crear_url = reverse_lazy("operaciones:servicio_crear"); lista_url = reverse_lazy("operaciones:servicios")
     def valores(self, o): return (o.nombre_servicio, o.descripcion, f"$ {o.precio}")
@@ -43,7 +43,7 @@ class ServicioListView(TablaAdminMixin):
 class RealizadoListView(TablaAdminMixin):
     model = ServicioRealizado
     titulo = "Servicios realizados"
-    descripcion = "Consultá los trabajos registrados."
+    descripcion = "Consultá los servicios realizados."
     columnas = ("Fecha y hora", "Servicio", "Empleado", "Monto")
     busqueda = ("servicio__nombre_servicio", "empleado__nombre", "empleado__apellido")
     crear_url = reverse_lazy("operaciones:realizado_crear")

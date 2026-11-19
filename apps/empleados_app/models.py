@@ -49,8 +49,8 @@ class Empleado(models.Model):
         unique=True,
         validators=[
             RegexValidator(
-                regex=r"^\d{7,10}$",
-                message="El DNI debe contener entre 7 y 10 dígitos.",
+                regex=r"^\d{7,8}$",
+                message="El DNI debe contener entre 7 y 8 digitos, solo números.",
             )
         ],
     )
