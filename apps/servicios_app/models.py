@@ -12,6 +12,7 @@ class Servicio(models.Model):
     nombre_servicio = models.CharField(max_length=50)
     descripcion = models.CharField(max_length=100)
     precio = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    activo = models.BooleanField(default=True)
     class Meta:
         db_table = "servicios"
         ordering = ["nombre_servicio"]

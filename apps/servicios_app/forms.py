@@ -33,18 +33,18 @@ class RegistrarServicioForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Se pregunta a la tabla de asistencias quién tiene una abierta. Filtrar con
-        # asistencias__fecha_hora_salida__isnull=True también traería a los empleados
-        # que no tienen ninguna asistencia.
         con_asistencia_abierta = RegistroAsistencia.objects.filter(
             fecha_hora_salida__isnull=True
         ).values("empleado_id")
         empleados = Empleado.objects.filter(estado="Activo", pk__in=con_asistencia_abierta)
         self.fields["empleado"].queryset = empleados
+
         if not empleados.exists():
             self.fields["empleado"].help_text = (
                 "No hay empleados con asistencia en curso. Registrá primero su asistencia."
             )
+
+        self.fields["servicio"].queryset = Servicio.objects.filter(activo=True)
         self.fields["servicio"].empty_label = "Elegí un servicio"
         self.fields["servicio"].label_from_instance = (
             lambda servicio: f"{servicio.nombre_servicio} — $ {servicio.precio}"

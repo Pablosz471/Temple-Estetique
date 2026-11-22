@@ -26,7 +26,7 @@
     <tbody>
     {% for fila in filas %}<tr>
       {% for valor in fila.valores %}<td>{{ valor|default:"—" }}</td>{% endfor %}
-      <td class="acciones-tabla"><a href="{{ fila.editar_url }}">Editar</a><a class="enlace-peligro" href="{{ fila.eliminar_url }}">Eliminar</a></td>
+      <td class="acciones-tabla"><a href="{{ fila.editar_url }}">Editar</a><a class="enlace-peligro" href="{{ fila.eliminar_url }}">{{ fila.baja_texto|default:"Eliminar" }}</a></td>
     </tr>{% endfor %}
     </tbody>
   </table>
