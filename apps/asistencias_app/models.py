@@ -16,6 +16,7 @@ class RegistroAsistencia(models.Model):
     fecha_hora_salida = models.DateTimeField(null=True, blank=True)
     comision_diaria = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     detalle = models.CharField(max_length=150, blank=True)
+    activo = models.BooleanField(default=True)
 
     class Meta:
         db_table = "registros_asistencias"

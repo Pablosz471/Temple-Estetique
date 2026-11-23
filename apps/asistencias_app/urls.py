@@ -6,5 +6,5 @@ urlpatterns = [
     path("", views.AsistenciaListView.as_view(), name="lista"),
     path("marcar/", views.marcar, name="marcar"),
     path("<int:pk>/editar/", views.AsistenciaUpdateView.as_view(), name="editar"),
-    path("<int:pk>/eliminar/", views.AsistenciaDeleteView.as_view(), name="eliminar"),
+    path("<int:pk>/estado/", views.AsistenciaEstadoView.as_view(), name="estado"),
 ]

@@ -21,7 +21,7 @@ def home(request):
         {
             "empleados_activos": Empleado.objects.filter(activo=True).count(),
             "servicios_activos": Servicio.objects.filter(activo=True).count(),
-            "asistencias_hoy": RegistroAsistencia.objects.filter(fecha_hora_ingreso__date=hoy).count(),
+            "asistencias_hoy": RegistroAsistencia.objects.filter(activo=True, fecha_hora_ingreso__date=hoy).count(),
             "liquidaciones_mes": RegistroMensual.objects.filter(mes=hoy.month, anio=hoy.year).count(),
             "ultimos_realizados": ServicioRealizado.objects.select_related(
                 "empleado", "Registro_asistencia__empleado", "servicio"

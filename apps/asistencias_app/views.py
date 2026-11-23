@@ -3,16 +3,15 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
-from django.db.models.deletion import ProtectedError
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-from django.views.generic import ListView, UpdateView, DeleteView
+from django.views.generic import ListView, UpdateView, DetailView
 from apps.empleados_app.models import Empleado
 from .forms import DetalleAsistenciaForm, MarcarAsistenciaForm
 from .models import RegistroAsistencia
-from .services import AsistenciaError, cerrar_vencidas, registrar_ingreso, registrar_salida
+from .services import (AsistenciaError, cambiar_estado_asistencia, cerrar_vencidas, reabrir_asistencia, registrar_ingreso, registrar_salida,)
 
 
 class AdminMixin(LoginRequiredMixin, UserPassesTestMixin):
@@ -30,7 +29,7 @@ class AsistenciaListView(AdminMixin, ListView):
     paginate_by = 20
     titulo = "Asistencias"
     descripcion = "Registrá el ingreso y la salida del equipo."
-    columnas = ("Empleado", "Ingreso", "Salida", "Comisión diaria", "Detalle")
+    columnas = ("Empleado", "Ingreso", "Salida", "Comisión diaria", "Detalle", "Estado")
     lista_url = reverse_lazy("asistencias:lista")
 
     def get(self, request, *args, **kwargs):
@@ -64,9 +63,11 @@ class AsistenciaListView(AdminMixin, ListView):
                     _formato(o.fecha_hora_salida) if o.fecha_hora_salida else "En curso",
                     "Se calcula a la salida" if o.abierta else f"$ {o.comision_diaria}",
                     o.detalle or "—",
+                    "Activa" if o.activo else "Inhabilitada",
                 ),
                 "editar_url": reverse_lazy("asistencias:editar", args=[o.pk]),
-                "eliminar_url": reverse_lazy("asistencias:eliminar", args=[o.pk]),
+                "eliminar_url": reverse_lazy("asistencias:estado", args=[o.pk]),
+                "baja_texto": "Inhabilitar" if o.activo else "Habilitar",
             }
             for o in ctx["object_list"]
         ]
@@ -76,7 +77,7 @@ class AsistenciaListView(AdminMixin, ListView):
         de_hoy = {
             a.empleado_id: a
             for a in RegistroAsistencia.objects.filter(
-                fecha_hora_ingreso__date=timezone.localdate()
+                activo=True, fecha_hora_ingreso__date=timezone.localdate()
             )
         }
         resultado = []
@@ -103,16 +104,20 @@ def marcar(request):
         return redirect("asistencias:lista")
     empleado = form.cleaned_data["empleado"]
     try:
-        if form.cleaned_data["accion"] == "ingreso":
+        accion = form.cleaned_data["accion"]
+        if accion == "ingreso":
             asistencia = registrar_ingreso(empleado)
             hora = timezone.localtime(asistencia.fecha_hora_ingreso).strftime("%H:%M")
             messages.success(request, f"Ingreso de {empleado} registrado a las {hora}.")
-        else:
+        elif accion == "salida":
             asistencia = registrar_salida(empleado)
             messages.success(
                 request,
                 f"Salida de {empleado} registrada. Comisión del día: $ {asistencia.comision_diaria}.",
             )
+        else:
+            reabrir_asistencia(empleado)
+            messages.success(request, f"Asistencia de {empleado} reabierta.")
     except AsistenciaError as error:
         messages.error(request, str(error))
     return redirect("asistencias:lista")
@@ -130,17 +135,25 @@ class AsistenciaUpdateView(AdminMixin, UpdateView):
         return super().form_valid(form)
 
 
-class AsistenciaDeleteView(AdminMixin, DeleteView):
+class AsistenciaEstadoView(AdminMixin, DetailView):
     model = RegistroAsistencia
-    template_name = "componentes/crud_confirmar.html"
-    success_url = reverse_lazy("asistencias:lista")
-    extra_context = {"titulo": "Eliminar asistencia", "lista_url": success_url}
+    template_name = "componentes/crud_estado.html"
+    extra_context = {
+        "lista_url": reverse_lazy("asistencias:lista"),
+        "entidad": "asistencia",
+        "consecuencia_baja": "Dejará de contar como la asistencia del día y el empleado podrá registrar una nueva. Se conserva el registro.",
+        "consecuencia_alta": "Volverá a contar como la asistencia de ese día.",
+    }
 
-    def form_valid(self, form):
+    def post(self, request, *args, **kwargs):
+        asistencia = self.get_object()
         try:
-            response = super().form_valid(form)
-        except ProtectedError:
-            messages.error(self.request, "No se puede eliminar: tiene servicios realizados.")
-            return redirect(self.success_url)
-        messages.success(self.request, "Registro eliminado.")
-        return response
+            cambiar_estado_asistencia(asistencia, not asistencia.activo)
+        except AsistenciaError as error:
+            messages.error(request, str(error))
+        else:
+            asistencia.refresh_from_db()
+            messages.success(
+                request, f"Asistencia {'habilitada' if asistencia.activo else 'inhabilitada'}."
+            )
+        return redirect("asistencias:lista")
