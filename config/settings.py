@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "apps.asistencias_app.apps.AsistenciasAppConfig",
     "apps.servicios_app.apps.ServiciosAppConfig",
     "apps.liquidaciones_app.apps.LiquidacionesAppConfig",
+    "apps.auditoria_app.apps.AuditoriaAppConfig",
 ]
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -45,6 +46,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "apps.auditoria_app.middleware.UsuarioActualMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "axes.middleware.AxesMiddleware",

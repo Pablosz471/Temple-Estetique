@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}Historial de cambios{% endblock %}
+
+{% block content %}
+<p class="antetitulo">Administración</p>
+<div class="encabezado">
+    <div><h1>Historial de cambios</h1><p>Registro de lo que se hace en el sistema. Solo lectura.</p></div>
+</div>
+
+<div class="herramientas">
+    <form method="get" class="busqueda">
+        <label for="buscar">Buscar en el historial</label>
+        <div><input id="buscar" name="q" value="{{ request.GET.q }}" maxlength="100" type="search">
+        <button type="submit">Buscar</button></div>
+    </form>
+</div>
+
+{% if page_obj.object_list %}
+<div class="tabla-scroll" tabindex="0" role="region" aria-label="Historial de cambios">
+    <table>
+        <caption>{{ paginator.count }} registro{{ paginator.count|pluralize:'s' }}</caption>
+        <thead><tr>
+            <th scope="col">Fecha y hora</th><th scope="col">Usuario</th><th scope="col">Acción</th>
+            <th scope="col">Sección</th><th scope="col">Registro</th><th scope="col">Detalle</th>
+        </tr></thead>
+        <tbody>
+            {% for r in page_obj %}<tr>
+                <td class="numero">{{ r.fecha_hora|date:"d/m/Y H:i:s" }}</td>
+                <td>{{ r.usuario_nombre|default:"—" }}</td>
+                <td>{{ r.get_accion_display }}</td>
+                <td>{{ r.modelo|default:"—" }}</td>
+                <td>{{ r.objeto|default:"—" }}</td>
+                <td>
+                    {% if r.detalle|length > 80 %}
+                    <details class="texto-largo">
+                        <summary>
+                            <span class="texto-corto">{{ r.detalle|truncatechars:80 }}</span>
+                            <span class="ver-mas">Ver más</span>
+                            <span class="ver-menos">Ver menos</span>
+                        </summary>
+                        <p>{{ r.detalle }}</p>
+                    </details>
+                    {% else %}{{ r.detalle|default:"—" }}{% endif %}
+                </td>
+            </tr>{% endfor %}
+        </tbody>
+    </table>
+</div>
+{% include 'componentes/paginacion.html' %}
+{% else %}
+<div class="vacio"><h2>No hay registros para mostrar</h2><p>Probá con otra búsqueda.</p></div>
+{% endif %}
+{% endblock %}

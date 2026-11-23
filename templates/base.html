@@ -55,6 +55,9 @@
             {% if request.resolver_match.namespace == 'asistencias' %}aria-current="page"{% endif %}>Asistencias</a>
             <a href="{% url 'liquidaciones:lista' %}"
             {% if request.resolver_match.namespace == 'liquidaciones' %}aria-current="page"{% endif %}>Liquidaciones</a>
+            <a href="{% url 'auditoria:lista' %}"
+            {% if request.resolver_match.namespace == 'auditoria' %}aria-current="page"{% endif %}>Historial</a>
+
             {% endif %}
         </nav>
         {% endif %}

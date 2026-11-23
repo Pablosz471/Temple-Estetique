@@ -17,12 +17,20 @@ class ServicioAdmin(admin.ModelAdmin):
 
     @admin.action(description="Inhabilitar servicios seleccionados")
     def inhabilitar(self, request, queryset):
-        cantidad=queryset.update(activo=False)
+        cantidad = 0
+        for servicio in queryset.filter(activo=True):
+            servicio.activo = False
+            servicio.save(update_fields=["activo"])
+            cantidad += 1
         self.message_user(request, f"{cantidad} servicio(s) inhabilitado(s).")
 
     @admin.action(description="Habilitar servicios seleccionados")
     def habilitar(self, request, queryset):
-        cantidad=queryset.update(activo=True)
+        cantidad = 0
+        for servicio in queryset.filter(activo=False):
+            servicio.activo = True
+            servicio.save(update_fields=["activo"])
+            cantidad += 1
         self.message_user(request, f"{cantidad} servicio(s) habilitado(s).")
 
 
