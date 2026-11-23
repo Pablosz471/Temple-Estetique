@@ -23,12 +23,27 @@
   <table>
     <caption>{{ paginator.count }} registro{{ paginator.count|pluralize:'s' }}</caption>
     <thead><tr>{% for columna in columnas %}<th scope="col">{{ columna }}</th>{% endfor %}<th scope="col">Acciones</th></tr></thead>
+
     <tbody>
     {% for fila in filas %}<tr>
-      {% for valor in fila.valores %}<td>{{ valor|default:"—" }}</td>{% endfor %}
+      {% for valor in fila.valores %}<td>
+        {% if valor|length > 50 %}
+        <details class="texto-largo">
+
+          <summary>
+            <span class="texto-corto">{{ valor|truncatechars:50 }}</span>
+            <span class="ver-mas">Ver más</span>
+            <span class="ver-menos">Ver menos</span>
+          </summary>
+          
+          <p>{{ valor }}</p>
+        </details>
+        {% else %}{{ valor|default:"—" }}{% endif %}
+      </td>{% endfor %}
       <td class="acciones-tabla"><a href="{{ fila.editar_url }}">Editar</a><a class="enlace-peligro" href="{{ fila.eliminar_url }}">{{ fila.baja_texto|default:"Eliminar" }}</a></td>
     </tr>{% endfor %}
     </tbody>
+
   </table>
 </div>
 {% include 'componentes/paginacion.html' %}

@@ -606,3 +606,36 @@ button:disabled {
 .liquidacion {
   margin-top:24px;
 }
+
+/* texto de descripcion de listas */
+.texto-largo summary {
+  cursor:pointer;
+  list-style:none;
+}
+.texto-largo summary::-webkit-details-marker {
+  display:none;
+}
+.texto-largo .ver-mas,
+.texto-largo .ver-menos {
+  color:var(--marca-oscura);
+  font-weight:600;
+  text-decoration:underline;
+  margin-left:6px;
+  white-space:nowrap;
+}
+.texto-largo .ver-menos,
+.texto-largo[open] .ver-mas,
+.texto-largo[open] .texto-corto {
+  display:none;
+}
+.texto-largo[open] .ver-menos {
+  display:inline;
+  margin-left:0;
+}
+.texto-largo p {
+  max-width:40ch;
+  margin:8px 0 0;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+
