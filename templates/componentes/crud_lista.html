@@ -10,13 +10,7 @@
 </div>
 
 {% block antes_de_tabla %}{% endblock %}
-<div class="herramientas">
-  <form method="get" class="busqueda">
-    <label for="buscar">Buscar en los registros</label>
-    <div><input id="buscar" name="q" value="{{ request.GET.q }}" maxlength="100" type="search">
-      <button type="submit">Buscar</button></div>
-  </form>
-</div>
+{% include 'componentes/controles.html' %}
 
 {% if filas %}
 <div class="tabla-scroll" tabindex="0" role="region" aria-label="{{ titulo }}">
@@ -35,7 +29,7 @@
             <span class="ver-mas">Ver más</span>
             <span class="ver-menos">Ver menos</span>
           </summary>
-          
+
           <p>{{ valor }}</p>
         </details>
         {% else %}{{ valor|default:"—" }}{% endif %}
@@ -48,6 +42,6 @@
 </div>
 {% include 'componentes/paginacion.html' %}
 {% else %}
-<div class="vacio"><h2>No hay registros para mostrar</h2><p>Probá con otra búsqueda o agregá el primer registro.</p>{% if crear_url %}<a class="boton" href="{{ crear_url }}">Crear registro</a>{% endif %}</div>
+<div class="vacio"><h2>No hay registros para mostrar</h2><p>Probá con otros filtros o agregá el primer registro.</p>{% if crear_url %}<a class="boton" href="{{ crear_url }}">Crear registro</a>{% endif %}</div>
 {% endif %}
 {% endblock %}

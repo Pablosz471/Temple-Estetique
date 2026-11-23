@@ -8,7 +8,10 @@ from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView, UpdateView, DetailView
+
 from apps.empleados_app.models import Empleado
+from apps.listados import ListadoMixin
+
 from .forms import DetalleAsistenciaForm, MarcarAsistenciaForm
 from .models import RegistroAsistencia
 from .services import (AsistenciaError, cambiar_estado_asistencia, cerrar_vencidas, reabrir_asistencia, registrar_ingreso, registrar_salida,)
@@ -23,7 +26,7 @@ def _formato(momento):
     return timezone.localtime(momento).strftime("%d/%m/%Y %H:%M")
 
 
-class AsistenciaListView(AdminMixin, ListView):
+class AsistenciaListView(AdminMixin, ListadoMixin, ListView):
     model = RegistroAsistencia
     template_name = "asistencias/panel.html"
     paginate_by = 20
@@ -31,19 +34,38 @@ class AsistenciaListView(AdminMixin, ListView):
     descripcion = "Registrá el ingreso y la salida del equipo."
     columnas = ("Empleado", "Ingreso", "Salida", "Comisión diaria", "Detalle", "Estado")
     lista_url = reverse_lazy("asistencias:lista")
+    busqueda = ("empleado__nombre", "empleado__apellido")
+    ordenes = (
+        ("-fecha", "Fecha (más reciente)", ("-fecha_hora_ingreso",)),
+        ("fecha", "Fecha (más antigua)", ("fecha_hora_ingreso",)),
+        ("nombre", "Nombre (A-Z)", ("empleado__apellido", "empleado__nombre")),
+        ("-nombre", "Nombre (Z-A)", ("-empleado__apellido", "-empleado__nombre")),
+        ("-comision", "Comisión (mayor a menor)", ("-comision_diaria",)),
+        ("comision", "Comisión (menor a mayor)", ("comision_diaria",)),
+    )
+    campo_fecha = "fecha_hora_ingreso"
+    filtros = (
+        {
+            "param": "empleado", "etiqueta": "Empleado", "campo": "empleado",
+            "opciones": lambda: [(str(e.pk), str(e), e.pk) for e in Empleado.objects.all()],
+        },
+        {
+            "param": "situacion", "etiqueta": "Situación", "campo": "fecha_hora_salida__isnull",
+            "opciones": [("encurso", "En curso", True), ("cerrada", "Cerrada", False)],
+        },
+        {
+            "param": "registro", "etiqueta": "Registro", "campo": "activo",
+            "opciones": [("activa", "Activa", True), ("inhabilitada", "Inhabilitada", False)],
+        },
+    )
+
 
     def get(self, request, *args, **kwargs):
         cerrar_vencidas()
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
-        qs = super().get_queryset().select_related("empleado")
-        termino = self.request.GET.get("q", "").strip()[:100]
-        if termino:
-            qs = qs.filter(
-                Q(empleado__nombre__icontains=termino) | Q(empleado__apellido__icontains=termino)
-            )
-        return qs
+        return super().get_queryset().select_related("empleado")
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)

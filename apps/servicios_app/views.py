@@ -6,7 +6,11 @@ from django.db.models.deletion import ProtectedError
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DetailView
+
 from apps.asistencias_app.services import cerrar_vencidas
+from apps.empleados_app.models import Empleado
+from apps.listados import ListadoMixin
+
 from .forms import ServicioForm, RegistrarServicioForm, EditarRealizadoForm
 from .services import ServicioError, cambiar_estado_realizado
 from .models import Servicio, ServicioRealizado
@@ -16,19 +20,12 @@ class AdminMixin(LoginRequiredMixin, UserPassesTestMixin):
     def test_func(self): return self.request.user.is_superuser
 
 
-class TablaAdminMixin(AdminMixin, ListView):
-    template_name = "componentes/crud_lista.html"; paginate_by = 20; columnas = (); busqueda = ()
-    def get_queryset(self):
-        qs = super().get_queryset(); termino = self.request.GET.get("q", "").strip()[:100]
-        if termino and self.busqueda:
-            filtro = Q()
-            for campo in self.busqueda: filtro |= Q(**{f"{campo}__icontains": termino})
-            qs = qs.filter(filtro)
-        return qs
+class TablaAdminMixin(AdminMixin, ListadoMixin, ListView):
+    template_name = "componentes/crud_lista.html"; paginate_by = 20; columnas = ()
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx.update(titulo=self.titulo, descripcion=self.descripcion, columnas=self.columnas, crear_url=self.crear_url, lista_url=self.lista_url)
-        ctx["filas"] = [{"valores": self.valores(obj), "editar_url": self.editar_url(obj), "eliminar_url": self.eliminar_url(obj), "baja_texto":self.baja_texto(obj)} for obj in ctx["object_list"]]
+        ctx["filas"] = [{"valores": self.valores(obj), "editar_url": self.editar_url(obj), "eliminar_url": self.eliminar_url(obj), "baja_texto": self.baja_texto(obj)} for obj in ctx["object_list"]]
         return ctx
     def baja_texto(self, obj):
         return "Inhabilitar"
@@ -38,6 +35,13 @@ class ServicioListView(TablaAdminMixin):
     model = Servicio; titulo = "Servicios"; descripcion = "Servicios disponibles en la estética."
     columnas = ("Servicio", "Descripción", "Precio"); busqueda = ("nombre_servicio", "descripcion")
     crear_url = reverse_lazy("operaciones:servicio_crear"); lista_url = reverse_lazy("operaciones:servicios")
+    ordenes = (
+        ("nombre", "Nombre (A-Z)", ("nombre_servicio",)),
+        ("-nombre", "Nombre (Z-A)", ("-nombre_servicio",)),
+        ("precio", "Precio (menor a mayor)", ("precio",)),
+        ("-precio", "Precio (mayor a menor)", ("-precio",)),
+    )
+    
     def valores(self, o): return (o.nombre_servicio, o.descripcion, f"$ {o.precio}","habilitado" if o.activo else "inhabilitado")
     def editar_url(self, o): return reverse_lazy("operaciones:servicio_editar", args=[o.pk])
     def eliminar_url(self, o): return reverse_lazy("operaciones:servicio_eliminar", args=[o.pk])
@@ -52,6 +56,28 @@ class RealizadoListView(TablaAdminMixin):
     busqueda = ("servicio__nombre_servicio", "empleado__nombre", "empleado__apellido")
     crear_url = reverse_lazy("operaciones:realizado_crear")
     lista_url = reverse_lazy("operaciones:realizados")
+    ordenes = (
+        ("-fecha", "Fecha (más reciente)", ("-fecha_hora",)),
+        ("fecha", "Fecha (más antigua)", ("fecha_hora",)),
+        ("nombre", "Nombre (A-Z)", ("empleado__apellido", "empleado__nombre")),
+        ("-nombre", "Nombre (Z-A)", ("-empleado__apellido", "-empleado__nombre")),
+    )
+    campo_fecha = "fecha_hora"
+    filtros = (
+        {
+            "param": "empleado", "etiqueta": "Empleado", "campo": "empleado",
+            "opciones": lambda: [(str(e.pk), str(e), e.pk) for e in Empleado.objects.all()],
+        },
+        {
+            "param": "servicio", "etiqueta": "Servicio", "campo": "servicio",
+            "opciones": lambda: [(str(s.pk), s.nombre_servicio, s.pk) for s in Servicio.objects.all()],
+        },
+        {
+            "param": "estado", "etiqueta": "Estado", "campo": "activo",
+            "opciones": [("activo", "Activo", True), ("inhabilitado", "Inhabilitado", False)],
+        },
+    )
+
 
     def get_queryset(self):
         return super().get_queryset().select_related("servicio", "empleado")

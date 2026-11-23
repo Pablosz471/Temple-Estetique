@@ -4,8 +4,9 @@ from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DetailView
 from django.db.models import Q
 from django.shortcuts import redirect
+from apps.listados import ListadoMixin
 from .forms import EmpleadoCrearForm, EmpleadoEditarForm
-from .models import Empleado
+from .models import Empleado, Rol
 
 
 class AdminMixin(LoginRequiredMixin, UserPassesTestMixin):
@@ -13,33 +14,19 @@ class AdminMixin(LoginRequiredMixin, UserPassesTestMixin):
         return self.request.user.is_superuser
 
 
-class TablaAdminMixin(AdminMixin, ListView):
+class TablaAdminMixin(AdminMixin, ListadoMixin, ListView):
     template_name = "componentes/crud_lista.html"
     paginate_by = 20
     columnas = ()
-    busqueda = ()
-
-    def get_queryset(self):
-        qs = super().get_queryset()
-        termino = self.request.GET.get("q", "").strip()[:100]
-        if termino and self.busqueda:
-            filtro = Q()
-            for campo in self.busqueda:
-                filtro |= Q(**{f"{campo}__icontains": termino})
-            qs = qs.filter(filtro)
-        return qs
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx.update(titulo=self.titulo, descripcion=self.descripcion, columnas=self.columnas,crear_url=self.crear_url, lista_url=self.lista_url)
-
+        ctx.update(titulo=self.titulo, descripcion=self.descripcion, columnas=self.columnas, crear_url=self.crear_url, lista_url=self.lista_url)
         ctx["filas"] = [{"valores": self.valores(obj), "editar_url": self.editar_url(obj), "eliminar_url": self.eliminar_url(obj), "baja_texto": self.baja_texto(obj)} for obj in ctx["object_list"]]
-
         return ctx
 
     def baja_texto(self, obj):
         return "Inhabilitar"
-
 
 
 class EmpleadoListView(TablaAdminMixin):
@@ -48,6 +35,21 @@ class EmpleadoListView(TablaAdminMixin):
     descripcion = "Administrá los perfiles, roles y estado del equipo."
     columnas = ("Empleado", "Usuario", "DNI", "Rol", "Estado")
     busqueda = ("nombre", "apellido", "dni", "usuario__username", "rol__nombre_rol")
+    ordenes = (
+        ("nombre", "Nombre (A-Z)", ("apellido", "nombre")),
+        ("-nombre", "Nombre (Z-A)", ("-apellido", "-nombre")),
+    )
+    filtros = (
+        {
+            "param": "rol", "etiqueta": "Rol", "campo": "rol",
+            "opciones": lambda: [(str(r.pk), r.nombre_rol, r.pk) for r in Rol.objects.all()],
+        },
+        {
+            "param": "estado", "etiqueta": "Estado", "campo": "activo",
+            "opciones": [("activo", "Activo", True), ("inactivo", "Inactivo", False)],
+        },
+    )
+
     crear_url = reverse_lazy("empleados:empleado_crear")
     lista_url = reverse_lazy("empleados:empleados")
 
