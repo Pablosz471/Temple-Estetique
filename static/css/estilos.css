@@ -639,6 +639,13 @@ button:disabled {
   overflow-wrap:anywhere;
 }
 
+/* filas inhabilitadas */
+tr.inhabilitado td {
+  background:#c6c5c3;
+  color:#5F5B55;
+}
+
+
 /* filtros */
 
 .solo-lector {
@@ -724,3 +731,4 @@ button:disabled {
   justify-content:flex-end;
   gap:16px;
 }
+

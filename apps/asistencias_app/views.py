@@ -90,6 +90,7 @@ class AsistenciaListView(AdminMixin, ListadoMixin, ListView):
                 "editar_url": reverse_lazy("asistencias:editar", args=[o.pk]),
                 "eliminar_url": reverse_lazy("asistencias:estado", args=[o.pk]),
                 "baja_texto": "Inhabilitar" if o.activo else "Habilitar",
+                "inhabilitada": not o.activo,
             }
             for o in ctx["object_list"]
         ]

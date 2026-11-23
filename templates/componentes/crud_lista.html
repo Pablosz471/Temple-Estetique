@@ -19,7 +19,7 @@
     <thead><tr>{% for columna in columnas %}<th scope="col">{{ columna }}</th>{% endfor %}<th scope="col">Acciones</th></tr></thead>
 
     <tbody>
-    {% for fila in filas %}<tr>
+{% for fila in filas %}<tr{% if fila.inhabilitada %} class="inhabilitado"{% endif %}>
       {% for valor in fila.valores %}<td>
         {% if valor|length > 50 %}
         <details class="texto-largo">
