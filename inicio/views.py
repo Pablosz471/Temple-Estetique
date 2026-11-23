@@ -19,7 +19,7 @@ def home(request):
         request,
         "inicio/home.html",
         {
-            "empleados_activos": Empleado.objects.filter(estado="Activo").count(),
+            "empleados_activos": Empleado.objects.filter(activo=True).count(),
             "servicios_activos": Servicio.objects.filter(activo=True).count(),
             "asistencias_hoy": RegistroAsistencia.objects.filter(fecha_hora_ingreso__date=hoy).count(),
             "liquidaciones_mes": RegistroMensual.objects.filter(mes=hoy.month, anio=hoy.year).count(),

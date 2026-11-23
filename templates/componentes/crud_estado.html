@@ -6,16 +6,18 @@
 <div class="form-contenedor">
     <a class="volver" href="{{ lista_url }}">← Volver a la lista</a>
     <p class="antetitulo">Confirmación</p>
+
     <div class="panel">
-        <h1>{% if object.activo %}Inhabilitar{% else %}Habilitar{% endif %} servicio</h1>
+        <h1>{% if object.activo %}Inhabilitar{% else %}Habilitar{% endif %} {{ entidad }}</h1>
         <p>¿Querés {% if object.activo %}inhabilitar{% else %}habilitar{% endif %} <strong>{{ object }}</strong>?
-        {% if object.activo %}Ya no se podrá registrar en nuevos servicios, pero se conserva todo su historial.
-        {% else %}Volverá a estar disponible para registrar servicios.{% endif %}</p>
+            {% if object.activo %}{{ consecuencia_baja }}{% else %}{{ consecuencia_alta }}{% endif %}</p>
         <form method="post">{% csrf_token %}
+
             <div class="acciones">
                 <button class="{% if object.activo %}peligro{% endif %}" type="submit">Sí, {% if object.activo %}inhabilitar{% else %}habilitar{% endif %}</button>
                 <a href="{{ lista_url }}">Cancelar</a>
             </div>
+            
         </form>
     </div>
 </div>

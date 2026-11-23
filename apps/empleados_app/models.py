@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.core.validators import RegexValidator
-from django.db import models
+from django.db import models, transaction
 
 
 class Rol(models.Model):
@@ -26,10 +26,9 @@ class Rol(models.Model):
 
 
 class Empleado(models.Model):
-    Estado_choices = [
-        ("Activo", "Activo"),
-        ("Inactivo", "Inactivo"),
-    ]
+
+    activo = models.BooleanField(default=True)
+
     usuario = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
@@ -64,7 +63,6 @@ class Empleado(models.Model):
         ],
     )
     direccion = models.CharField(max_length=100, blank=True)
-    estado = models.CharField(max_length=20, choices=Estado_choices, default="Activo")
     foto_empleado = models.CharField(max_length=100, blank=True)
     especialidad = models.CharField(max_length=100, blank=True)
     class Meta:
@@ -75,7 +73,18 @@ class Empleado(models.Model):
 
     def __str__(self):
         return f"{self.nombre} {self.apellido}"
-    
+
+    def save(self, *args, **kwargs):
+        with transaction.atomic():
+            super().save(*args, **kwargs)
+            usuario = self.usuario 
+            if usuario.is_active != self.activo:
+                usuario.is_active = self.activo
+                if self.activo:
+                    usuario.estado = usuario.Estado.APROBADO
+                usuario.save(update_fields=["is_active", "estado"])
+
+
 class HistorialAcceso(models.Model):
     empleado = models.ForeignKey(
         Empleado,

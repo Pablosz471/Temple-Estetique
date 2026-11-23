@@ -113,9 +113,19 @@ class EmpleadoEditarForm(EmpleadoBaseForm):
             raise forms.ValidationError("No puedes quitarte el rol de Administrador.")
         return rol
 
+    def clean_activo(self):
+        activo = self.cleaned_data["activo"]
+        es_uno_mismo = self.usuario_actual and self.instance.usuario_id == self.usuario_actual.pk
+        if es_uno_mismo and not activo:
+            raise forms.ValidationError("No puedes inhabilitar tu propio perfil.")
+        return activo
+
+
     @transaction.atomic
     def save(self, commit=True):
-        empleado = super().save()
+        empleado = super().save(commit=False)
+        empleado.save()
+        self.save_m2m()
         usuario = empleado.usuario
         es_admin = empleado.rol.es_administrador
         usuario.email = self.cleaned_data["email"]
@@ -124,4 +134,5 @@ class EmpleadoEditarForm(EmpleadoBaseForm):
         usuario.is_superuser = es_admin
         usuario.is_staff = es_admin
         usuario.save(update_fields=["email", "first_name", "last_name", "is_superuser", "is_staff"])
+        
         return empleado

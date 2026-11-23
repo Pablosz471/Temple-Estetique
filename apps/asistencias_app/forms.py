@@ -4,7 +4,7 @@ from .models import RegistroAsistencia
 
 
 class MarcarAsistenciaForm(forms.Form):
-    empleado = forms.ModelChoiceField(queryset=Empleado.objects.filter(estado="Activo"))
+    empleado = forms.ModelChoiceField(queryset=Empleado.objects.filter(activo=True))
     accion = forms.ChoiceField(choices=[("ingreso", "Ingreso"), ("salida", "Salida")])
 
 

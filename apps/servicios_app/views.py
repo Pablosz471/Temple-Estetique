@@ -118,5 +118,13 @@ class RealizadoDeleteView(BajaMixin): model = ServicioRealizado; success_url = r
 
 for _view in (ServicioCreateView, ServicioUpdateView, RealizadoCreateView, RealizadoUpdateView):
     _view.extra_context = {"titulo": _view.titulo, "lista_url": _view.success_url}
-RealizadoDeleteView.extra_context = {"titulo": _view.titulo, "lista_url": _view.success_url}
-ServicioEstadoView.extra_context = {"lista_url": reverse_lazy("operaciones:servicios")}
+
+RealizadoDeleteView.extra_context = {"titulo": RealizadoDeleteView.titulo, "lista_url": RealizadoDeleteView.success_url}
+
+
+ServicioEstadoView.extra_context = {
+    "lista_url": reverse_lazy("operaciones:servicios"),
+    "entidad": "servicio",
+    "consecuencia_baja": "Ya no se podrá registrar en nuevos servicios realizados, pero se conserva todo su historial.",
+    "consecuencia_alta": "Volverá a estar disponible para registrar servicios.",
+}

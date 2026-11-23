@@ -49,8 +49,8 @@
             {% if request.resolver_match.namespace == 'operaciones' and 'realizado' not in request.resolver_match.url_name %}aria-current="page"{% endif %}>Servicios</a>
             <a href="{% url 'operaciones:realizados' %}"
             {% if request.resolver_match.namespace == 'operaciones' and 'realizado' in request.resolver_match.url_name %}aria-current="page"{% endif %}>Servicios realizados</a>
-            <a href="{% url 'personal:empleados' %}"
-            {% if request.resolver_match.namespace == 'personal' %}aria-current="page"{% endif %}>Personal</a>
+            <a href="{% url 'empleados:empleados' %}"
+            {% if request.resolver_match.namespace == 'empleados' %}aria-current="page"{% endif %}>Empleados</a>
             <a href="{% url 'asistencias:lista' %}"
             {% if request.resolver_match.namespace == 'asistencias' %}aria-current="page"{% endif %}>Asistencias</a>
             <a href="{% url 'liquidaciones:lista' %}"

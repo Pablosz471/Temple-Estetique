@@ -80,7 +80,7 @@ class AsistenciaListView(AdminMixin, ListView):
             )
         }
         resultado = []
-        for empleado in Empleado.objects.filter(estado="Activo"):
+        for empleado in Empleado.objects.filter(activo=True):
             asistencia = de_hoy.get(empleado.pk)
             if asistencia is None:
                 estado = "sin"

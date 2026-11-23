@@ -18,8 +18,8 @@ Inicio
 </div>
 {% if user.is_superuser %}
 <div class="resumen">
-<a href="{% url 'personal:empleados' %}">
-<span>Personal activo</span><strong>{{ empleados_activos }}</strong>
+<a href="{% url 'empleados:empleados' %}">
+<span>Empleado(s) activo(s)</span><strong>{{ empleados_activos }}</strong>
 </a>
 <a href="{% url 'operaciones:servicios' %}">
 <span>Servicios</span><strong>{{ servicios_activos }}</strong>

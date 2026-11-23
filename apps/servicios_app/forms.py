@@ -36,7 +36,7 @@ class RegistrarServicioForm(forms.ModelForm):
         con_asistencia_abierta = RegistroAsistencia.objects.filter(
             fecha_hora_salida__isnull=True
         ).values("empleado_id")
-        empleados = Empleado.objects.filter(estado="Activo", pk__in=con_asistencia_abierta)
+        empleados = Empleado.objects.filter(activo=True, pk__in=con_asistencia_abierta)
         self.fields["empleado"].queryset = empleados
 
         if not empleados.exists():

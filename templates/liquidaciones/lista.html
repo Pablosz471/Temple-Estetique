@@ -14,7 +14,7 @@
     <select name="empleado" id="empleado" required>
       <option value="">Elegí un empleado</option>
       {% for e in empleados %}
-      <option value="{{ e.pk }}"{% if e.pk == empleado.pk %} selected{% endif %}>{{ e }}{% if e.estado != "Activo" %} (inactivo){% endif %}</option>
+      <option value="{{ e.pk }}"{% if e.pk == empleado.pk %} selected{% endif %}>{{ e }}{% if not e.activo %} (inactivo){% endif %}</option>
       {% endfor %}
     </select>
   </div>
