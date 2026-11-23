@@ -10,5 +10,5 @@ urlpatterns = [
     path("realizados/", views.RealizadoListView.as_view(), name="realizados"),
     path("realizados/nuevo/", views.RealizadoCreateView.as_view(), name="realizado_crear"),
     path("realizados/<int:pk>/editar/", views.RealizadoUpdateView.as_view(), name="realizado_editar"),
-    path("realizados/<int:pk>/eliminar/", views.RealizadoDeleteView.as_view(), name="realizado_eliminar"),
+    path("realizados/<int:pk>/estado/", views.RealizadoEstadoView.as_view(), name="realizado_estado"),
 ]

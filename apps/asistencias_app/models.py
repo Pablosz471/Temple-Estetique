@@ -44,7 +44,7 @@ class RegistroAsistencia(models.Model):
         return self.fecha_hora_salida is None
 
     def calcular_comision(self):
-        total = self.servicios_realizados.aggregate(total=Sum("monto_servicio"))["total"]
+        total = self.servicios_realizados.filter(activo=True).aggregate(total=Sum("monto_servicio"))["total"]
         return ((total or Decimal("0")) * self.PORCENTAJE_COMISION).quantize(Decimal("0.01"))
 
     def actualizar_comision(self):

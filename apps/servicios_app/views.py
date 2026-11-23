@@ -5,9 +5,10 @@ from django.db.models import Q
 from django.db.models.deletion import ProtectedError
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
-from .forms import ServicioForm, RegistrarServicioForm, ObservacionServicioForm
+from django.views.generic import ListView, CreateView, UpdateView, DetailView
 from apps.asistencias_app.services import cerrar_vencidas
+from .forms import ServicioForm, RegistrarServicioForm, EditarRealizadoForm
+from .services import ServicioError, cambiar_estado_realizado
 from .models import Servicio, ServicioRealizado
 
 
@@ -47,7 +48,7 @@ class RealizadoListView(TablaAdminMixin):
     model = ServicioRealizado
     titulo = "Servicios realizados"
     descripcion = "Consultá los servicios realizados."
-    columnas = ("Fecha y hora", "Servicio", "Empleado", "Monto")
+    columnas = ("Fecha y hora", "Servicio", "Empleado", "Monto", "Estado")
     busqueda = ("servicio__nombre_servicio", "empleado__nombre", "empleado__apellido")
     crear_url = reverse_lazy("operaciones:realizado_crear")
     lista_url = reverse_lazy("operaciones:realizados")
@@ -61,10 +62,13 @@ class RealizadoListView(TablaAdminMixin):
             o.servicio.nombre_servicio,
             str(o.empleado),
             f"$ {o.monto_servicio}",
+            "Activo" if o.activo else "Inhabilitado",
         )
 
     def editar_url(self, o): return reverse_lazy("operaciones:realizado_editar", args=[o.pk])
-    def eliminar_url(self, o): return reverse_lazy("operaciones:realizado_eliminar", args=[o.pk])
+    def eliminar_url(self, o): return reverse_lazy("operaciones:realizado_estado", args=[o.pk])
+    def baja_texto(self, o): return "Inhabilitar" if o.activo else "Habilitar"
+
 
 
 class GuardarMixin:
@@ -89,20 +93,39 @@ class RealizadoCreateView(AdminMixin, GuardarMixin, CreateView):
 
 class RealizadoUpdateView(AdminMixin, GuardarMixin, UpdateView):
     model = ServicioRealizado
-    form_class = ObservacionServicioForm
+    form_class = EditarRealizadoForm
     template_name = "componentes/crud_form.html"
     success_url = reverse_lazy("operaciones:realizados")
-    titulo = "Editar observación"
+    titulo = "Editar servicio realizado"
 
-
-class BajaMixin(AdminMixin, DeleteView):
-    template_name = "componentes/crud_confirmar.html"
-    def form_valid(self, form):
-        try: response = super().form_valid(form)
-        except ProtectedError:
-            messages.error(self.request, "No se puede eliminar: hay servicios realizados relacionados.")
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if not self.object.asistencia_en_curso:
+            messages.error(request, EditarRealizadoForm.MENSAJE)
             return redirect(self.success_url)
-        messages.success(self.request, "Registro eliminado."); return response
+        return super().post(request, *args, **kwargs)
+
+
+class RealizadoEstadoView(AdminMixin, DetailView):
+    model = ServicioRealizado
+    template_name = "componentes/crud_estado.html"
+
+    def post(self, request, *args, **kwargs):
+        realizado = self.get_object()
+        try:
+            cambiar_estado_realizado(realizado, not realizado.activo)
+        except ServicioError as error:
+            messages.error(request, str(error))
+        else:
+            realizado.refresh_from_db()
+            messages.success(
+                request,
+                f"Servicio realizado {'habilitado' if realizado.activo else 'inhabilitado'}.",
+            )
+        return redirect("operaciones:realizados")
+
+
+
 class ServicioEstadoView(AdminMixin, DetailView):
     model = Servicio
     template_name="componentes/crud_estado.html"
@@ -114,12 +137,16 @@ class ServicioEstadoView(AdminMixin, DetailView):
         messages.success(request, f"Servicio {'habilitado' if servicio.activo else 'inhabilitado'}.")
         return redirect("operaciones:servicios")
 
-class RealizadoDeleteView(BajaMixin): model = ServicioRealizado; success_url = reverse_lazy("operaciones:realizados"); titulo = "Eliminar registro"
 
 for _view in (ServicioCreateView, ServicioUpdateView, RealizadoCreateView, RealizadoUpdateView):
     _view.extra_context = {"titulo": _view.titulo, "lista_url": _view.success_url}
 
-RealizadoDeleteView.extra_context = {"titulo": RealizadoDeleteView.titulo, "lista_url": RealizadoDeleteView.success_url}
+RealizadoEstadoView.extra_context = {
+    "lista_url": reverse_lazy("operaciones:realizados"),
+    "entidad": "servicio realizado",
+    "consecuencia_baja": "Dejará de contar en la comisión diaria y en los totales del mes, pero se conserva el registro.",
+    "consecuencia_alta": "Volverá a contar en la comisión diaria y en los totales del mes.",
+}
 
 
 ServicioEstadoView.extra_context = {

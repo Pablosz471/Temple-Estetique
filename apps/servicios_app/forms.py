@@ -2,6 +2,8 @@ from django import forms
 from django.core.validators import MinValueValidator
 from django.db import transaction
 from django.utils import timezone
+from django.db.models import Q
+from apps.asistencias_app.services import cerrar_vencidas
 from apps.asistencias_app.models import RegistroAsistencia
 from apps.empleados_app.models import Empleado
 from .models import Servicio, ServicioRealizado
@@ -71,9 +73,36 @@ class RegistrarServicioForm(forms.ModelForm):
         return realizado
 
 
-class ObservacionServicioForm(forms.ModelForm):
+class EditarRealizadoForm(forms.ModelForm):
+    MENSAJE = (
+        "No se puede editar: la asistencia de ese día ya tiene la salida registrada. "
+        "Si es de hoy, reabrila para poder editar."
+    )
+
     class Meta:
         model = ServicioRealizado
-        fields = ("observacion",)
+        fields = ("servicio", "observacion")
         labels = {"observacion": "Observación"}
         widgets = {"observacion": forms.Textarea(attrs={"rows": 3})}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        cerrar_vencidas()
+        self.fields["servicio"].queryset = Servicio.objects.filter(
+            Q(activo=True) | Q(pk=self.instance.servicio_id)
+        )
+        self.fields["servicio"].label_from_instance = (
+            lambda servicio: f"{servicio.nombre_servicio} — $ {servicio.precio}"
+        )
+        if not self.instance.asistencia_en_curso:
+            for campo in self.fields.values():
+                campo.disabled = True
+            self.fields["servicio"].help_text = self.MENSAJE
+
+    def save(self, commit=True):
+        realizado = super().save(commit=False)
+        if "servicio" in self.changed_data:
+            realizado.monto_servicio = realizado.servicio.precio
+        if commit:
+            realizado.save()
+        return realizado

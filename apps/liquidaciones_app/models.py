@@ -47,7 +47,7 @@ class RegistroMensual(models.Model):
         from apps.servicios_app.models import ServicioRealizado
 
         total = ServicioRealizado.objects.filter(
-            empleado_id=empleado_id, fecha_hora__year=anio, fecha_hora__month=mes
+            activo=True, empleado_id=empleado_id, fecha_hora__year=anio, fecha_hora__month=mes
         ).aggregate(total=Sum("monto_servicio"))["total"] or Decimal("0")
         comision = (total * RegistroAsistencia.PORCENTAJE_COMISION).quantize(Decimal("0.01"))
         registro, _ = cls.objects.update_or_create(
@@ -75,7 +75,10 @@ class RegistroMensual(models.Model):
         from apps.servicios_app.models import ServicioRealizado
 
         return ServicioRealizado.objects.filter(
+            activo=True,
             empleado_id=self.empleado_id,
             fecha_hora__year=self.anio,
             fecha_hora__month=self.mes,
         ).select_related("servicio")
+
+

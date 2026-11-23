@@ -46,6 +46,8 @@ class ServicioRealizado(models.Model):
     fecha_hora = models.DateTimeField()
     monto_servicio = models.DecimalField(max_digits=10, decimal_places=2)
     observacion = models.CharField(max_length=200, blank=True)
+    activo = models.BooleanField(default=True)
+
 
     class Meta:
         db_table = "servicios_realizados"
@@ -60,6 +62,24 @@ class ServicioRealizado(models.Model):
             else self.empleado
         )
         return f"{self.servicio} - {empleado} - {timezone.localtime(self.fecha_hora):%d/%m/%Y %H:%M}"
+
+    @property
+    def asistencia_en_curso(self):
+        """¿La asistencia de ese día sigue abierta (sin salida registrada)?"""
+        from apps.asistencias_app.models import RegistroAsistencia
+
+        if self.Registro_asistencia_id:
+            return RegistroAsistencia.objects.filter(
+                pk=self.Registro_asistencia_id, fecha_hora_salida__isnull=True
+            ).exists()
+        dia = timezone.localtime(self.fecha_hora).date()
+        return RegistroAsistencia.objects.filter(
+            empleado_id=self.empleado_id,
+            activo=True,
+            fecha_hora_salida__isnull=True,
+            fecha_hora_ingreso__date=dia,
+        ).exists()
+
 
     def save(self, *args, **kwargs):
         anterior = None

@@ -84,10 +84,11 @@ def tiene_servicios(asistencia):
     from apps.servicios_app.models import ServicioRealizado
 
     dia = timezone.localtime(asistencia.fecha_hora_ingreso).date()
-    return ServicioRealizado.objects.filter(
+    return ServicioRealizado.objects.filter(activo=True).filter(
         Q(Registro_asistencia=asistencia)
         | Q(empleado=asistencia.empleado, fecha_hora__date=dia)
     ).exists()
+
 
 
 def tiene_otra_activa(asistencia):
