@@ -61,6 +61,8 @@
             {% elif user.empleado %}
             <a href="{% url 'operaciones:mis_servicios' %}"
             {% if request.resolver_match.url_name == 'mis_servicios' %}aria-current="page"{% endif %}>Mis servicios realizados</a>
+            <a href="{% url 'asistencias:mis_asistencias' %}"
+            {% if request.resolver_match.url_name == 'mis_asistencias' %}aria-current="page"{% endif %}>Mis asistencias</a>
             {% endif %}
         </nav>
         {% endif %}

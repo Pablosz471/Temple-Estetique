@@ -28,7 +28,10 @@ Inicio
 </div>
 
 <section class="bloque">
+<div class="encabezado">
 <h2>Tu asistencia de hoy</h2>
+<a href="{% url 'asistencias:mis_asistencias' %}">Ver todas →</a>
+</div>
 <div class="lista-recientes">
 {% if asistencia_hoy %}
 <div class="fila">

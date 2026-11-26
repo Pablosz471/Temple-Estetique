@@ -9,6 +9,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView, UpdateView, DetailView
 
+from apps.empleados_app.mixins import EmpleadoSoloLecturaMixin
 from apps.empleados_app.models import Empleado
 from apps.listados import ListadoMixin
 
@@ -114,6 +115,55 @@ class AsistenciaListView(AdminMixin, ListadoMixin, ListView):
                 estado = "cerrada"
             resultado.append({"empleado": empleado, "estado": estado})
         return resultado
+
+
+class MisAsistenciasListView(EmpleadoSoloLecturaMixin, ListadoMixin, ListView):
+    model = RegistroAsistencia
+    template_name = "componentes/crud_lista.html"
+    paginate_by = 20
+    columnas = ("Ingreso", "Salida", "Comisión diaria", "Detalle")
+    busqueda = ("detalle",)
+    ordenes = (
+        ("-fecha", "Fecha (más reciente)", ("-fecha_hora_ingreso",)),
+        ("fecha", "Fecha (más antigua)", ("fecha_hora_ingreso",)),
+        ("-comision", "Comisión (mayor a menor)", ("-comision_diaria",)),
+        ("comision", "Comisión (menor a mayor)", ("comision_diaria",)),
+    )
+    campo_fecha = "fecha_hora_ingreso"
+    filtros = (
+        {
+            "param": "situacion", "etiqueta": "Situación", "campo": "fecha_hora_salida__isnull",
+            "opciones": [("encurso", "En curso", True), ("cerrada", "Cerrada", False)],
+        },
+    )
+
+    def get(self, request, *args, **kwargs):
+        cerrar_vencidas()
+        return super().get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return super().get_queryset().filter(activo=True, empleado=self.request.user.empleado)
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx.update(
+            titulo="Mis asistencias",
+            descripcion="Consultá tus ingresos, salidas y comisiones diarias.",
+            columnas=self.columnas,
+            solo_lectura=True,
+        )
+        ctx["filas"] = [
+            {
+                "valores": (
+                    _formato(o.fecha_hora_ingreso),
+                    _formato(o.fecha_hora_salida) if o.fecha_hora_salida else "En curso",
+                    "Se calcula a la salida" if o.abierta else f"$ {o.comision_diaria}",
+                    o.detalle or "—",
+                )
+            }
+            for o in ctx["object_list"]
+        ]
+        return ctx
 
 
 @login_required
