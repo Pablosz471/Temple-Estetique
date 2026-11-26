@@ -6,9 +6,9 @@
 <p class="antetitulo">{% if solo_lectura %}Tu espacio de trabajo{% else %}Gestión del salón{% endif %}</p>
 <div class="encabezado">
   {% if solo_lectura %}
-  <div><h1>Mis liquidaciones</h1><p>Lo que generaste en cada mes y tu comisión del 40%.</p></div>
+  <div><h1>Mis liquidaciones</h1><p>Lo que generaste en cada mes y tu comisión del {{ porcentaje_comision }}%.</p></div>
   {% else %}
-  <div><h1>Liquidaciones mensuales</h1><p>Lo que generó cada empleado en el mes y su comisión del 40%.</p></div>
+  <div><h1>Liquidaciones mensuales</h1><p>Lo que generó cada empleado en el mes y su comisión del {{ porcentaje_comision }}%.</p></div>
   {% endif %}
 </div>
 
@@ -47,7 +47,7 @@
   <div class="resumen">
     <div><span>Servicios realizados</span><strong>{{ registro.cantidad }}</strong></div>
     <div><span>Total generado</span><strong>$ {{ registro.total_generado }}</strong></div>
-    <div><span>Comisión (40%)</span><strong>$ {{ registro.total_comisiones }}</strong></div>
+    <div><span>Comisión ({{ porcentaje_comision }}%)</span><strong>$ {{ registro.total_comisiones }}</strong></div>
   </div>
   <h3>Últimos servicios realizados</h3>
   <div class="lista-recientes">

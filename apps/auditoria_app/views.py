@@ -1,6 +1,6 @@
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import ListView
 from apps.listados import ListadoMixin
+from apps.mixins import AdminMixin
 from .models import RegistroCambio
 
 
@@ -9,7 +9,7 @@ def _distintos(campo):
     return [(v, v, v) for v in sorted(valores) if v]
 
 
-class HistorialListView(LoginRequiredMixin, UserPassesTestMixin, ListadoMixin, ListView):
+class HistorialListView(AdminMixin, ListadoMixin, ListView):
     model = RegistroCambio
     template_name = "auditoria/lista.html"
     paginate_by = 30
@@ -39,6 +39,3 @@ class HistorialListView(LoginRequiredMixin, UserPassesTestMixin, ListadoMixin, L
             "campo": "modelo", "opciones": lambda: _distintos("modelo"),
         },
     )
-
-    def test_func(self):
-        return self.request.user.is_superuser

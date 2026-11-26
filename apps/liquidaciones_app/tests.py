@@ -118,6 +118,25 @@ class LiquidacionesTests(TestCase):
         self.assertEqual(respuesta.context["mes_elegido"], "")
         self.assertIn("2025-03", [r.clave for r in respuesta.context["registros"]])
 
+    def test_resumen_de_varios_meses_en_una_sola_consulta(self):
+        for dia in range(1, 8):
+            self.registrar("1000", local(2025, 5, dia))
+        self.registrar("2000", local(2025, 6, 30, 23, 30))
+        anulado = self.registrar("3000", local(2025, 6, 10))
+        anulado.activo = False
+        anulado.save()
+        RegistroMensual.actualizar(self.empleado.pk, 2025, 7)
+        registros = list(self.empleado.registros_mensuales.all())
+
+        with self.assertNumQueries(1):
+            RegistroMensual.cargar_resumenes(self.empleado, registros)
+            nombres = [s.servicio.nombre_servicio for r in registros for s in r.ultimos]
+
+        self.assertEqual(len(nombres), 6)
+        for registro in registros:
+            self.assertEqual(registro.cantidad, registro.servicios().count())
+            self.assertEqual(registro.ultimos, list(registro.servicios()[:5]))
+
     def test_ultimos_cinco_y_ver_mas_con_todos(self):
         for dia in range(1, 8):
             self.registrar("1000", local(2025, 5, dia))

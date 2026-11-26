@@ -42,7 +42,7 @@ def _home_empleado(request, hoy):
         contexto.update(
             servicios_hoy=de_hoy.count(),
             total_hoy=total.quantize(Decimal("0.01")),
-            comision_hoy=(total * RegistroAsistencia.PORCENTAJE_COMISION).quantize(Decimal("0.01")),
+            comision_hoy=RegistroAsistencia.comision_de(total),
             asistencia_hoy=empleado.asistencias.filter(
                 activo=True, fecha_hora_ingreso__date=hoy
             ).first(),

@@ -28,6 +28,27 @@ class CuentasTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotIn("_auth_user_id", self.client.session)
 
+    def test_cambiar_la_contrasena(self):
+        usuario = Usuario.objects.create_user(
+            "clara", "clara@example.test", "Temporal-segura-298!",
+            is_active=True, estado=Usuario.Estado.APROBADO,
+        )
+        self.client.force_login(usuario)
+        url = reverse("cuentas:cambiar_password")
+        nueva = "Otra-clave-segura-678"
+        self.client.post(url, {"old_password": "incorrecta", "new_password1": nueva, "new_password2": nueva})
+        usuario.refresh_from_db()
+        self.assertTrue(usuario.check_password("Temporal-segura-298!"))
+
+        respuesta = self.client.post(
+            url,
+            {"old_password": "Temporal-segura-298!", "new_password1": nueva, "new_password2": nueva},
+            follow=True,
+        )
+        self.assertTrue(respuesta.context["user"].is_authenticated)
+        usuario.refresh_from_db()
+        self.assertTrue(usuario.check_password(nueva))
+
     def test_logout_requiere_post(self):
         self.client.force_login(self.admin)
         self.assertEqual(self.client.get(reverse("cuentas:logout")).status_code, 405)

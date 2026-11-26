@@ -1,6 +1,5 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
@@ -8,28 +7,29 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView, UpdateView, DetailView
 
-from apps.empleados_app.mixins import EmpleadoSoloLecturaMixin
 from apps.empleados_app.models import Empleado
+from apps.formatos import fecha_hora
 from apps.listados import ListadoMixin
+from apps.mixins import AdminMixin, EmpleadoSoloLecturaMixin, TablaAdminMixin
 
 from .forms import DetalleAsistenciaForm, MarcarAsistenciaForm
 from .models import RegistroAsistencia
 from .services import (AsistenciaError, cambiar_estado_asistencia, cerrar_vencidas, reabrir_asistencia, registrar_ingreso, registrar_salida,)
 
 
-class AdminMixin(LoginRequiredMixin, UserPassesTestMixin):
-    def test_func(self):
-        return self.request.user.is_superuser
+def _datos_de_jornada(asistencia):
+    """Ingreso, salida, comisión y detalle, tal como se muestran en las tablas."""
+    return (
+        fecha_hora(asistencia.fecha_hora_ingreso),
+        fecha_hora(asistencia.fecha_hora_salida) if asistencia.fecha_hora_salida else "En curso",
+        "Se calcula a la salida" if asistencia.abierta else f"$ {asistencia.comision_diaria}",
+        asistencia.detalle or "—",
+    )
 
 
-def _formato(momento):
-    return timezone.localtime(momento).strftime("%d/%m/%Y %H:%M")
-
-
-class AsistenciaListView(AdminMixin, ListadoMixin, ListView):
+class AsistenciaListView(TablaAdminMixin):
     model = RegistroAsistencia
     template_name = "asistencias/panel.html"
-    paginate_by = 20
     titulo = "Asistencias"
     descripcion = "Registrá el ingreso y la salida del equipo."
     columnas = ("Empleado", "Ingreso", "Salida", "Comisión diaria", "Detalle", "Estado")
@@ -69,32 +69,21 @@ class AsistenciaListView(AdminMixin, ListadoMixin, ListView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx.update(
-            titulo=self.titulo,
-            descripcion=self.descripcion,
-            columnas=self.columnas,
-            crear_url="",
-            lista_url=self.lista_url,
-            empleados=self._empleados_con_estado(),
-        )
-        ctx["filas"] = [
-            {
-                "valores": (
-                    str(o.empleado),
-                    _formato(o.fecha_hora_ingreso),
-                    _formato(o.fecha_hora_salida) if o.fecha_hora_salida else "En curso",
-                    "Se calcula a la salida" if o.abierta else f"$ {o.comision_diaria}",
-                    o.detalle or "—",
-                    "Activa" if o.activo else "Inhabilitada",
-                ),
-                "editar_url": reverse_lazy("asistencias:editar", args=[o.pk]),
-                "eliminar_url": reverse_lazy("asistencias:estado", args=[o.pk]),
-                "baja_texto": "Inhabilitar" if o.activo else "Habilitar",
-                "inhabilitada": not o.activo,
-            }
-            for o in ctx["object_list"]
-        ]
+        ctx["empleados"] = self._empleados_con_estado()
         return ctx
+
+    def valores(self, o):
+        return (
+            str(o.empleado),
+            *_datos_de_jornada(o),
+            "Activa" if o.activo else "Inhabilitada",
+        )
+
+    def editar_url(self, o):
+        return reverse_lazy("asistencias:editar", args=[o.pk])
+
+    def eliminar_url(self, o):
+        return reverse_lazy("asistencias:estado", args=[o.pk])
 
     def _empleados_con_estado(self):
         de_hoy = {
@@ -151,17 +140,7 @@ class MisAsistenciasListView(EmpleadoSoloLecturaMixin, ListadoMixin, ListView):
             columnas=self.columnas,
             solo_lectura=True,
         )
-        ctx["filas"] = [
-            {
-                "valores": (
-                    _formato(o.fecha_hora_ingreso),
-                    _formato(o.fecha_hora_salida) if o.fecha_hora_salida else "En curso",
-                    "Se calcula a la salida" if o.abierta else f"$ {o.comision_diaria}",
-                    o.detalle or "—",
-                )
-            }
-            for o in ctx["object_list"]
-        ]
+        ctx["filas"] = [{"valores": _datos_de_jornada(o)} for o in ctx["object_list"]]
         return ctx
 
 

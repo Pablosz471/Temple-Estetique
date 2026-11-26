@@ -1,36 +1,30 @@
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.core.exceptions import PermissionDenied
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.views.generic import ListView, TemplateView
-from apps.empleados_app.mixins import EmpleadoSoloLecturaMixin
 from apps.empleados_app.models import Empleado
 from apps.listados import ListadoMixin
+from apps.mixins import AdminMixin, EmpleadoSoloLecturaMixin
 from apps.servicios_app.models import Servicio
 from .models import RegistroMensual
 
 
-def _exigir_admin(request):
-    if not request.user.is_superuser:
-        raise PermissionDenied
+class LiquidacionesView(AdminMixin, TemplateView):
+    template_name = "liquidaciones/lista.html"
 
-
-@login_required
-def lista(request):
-    _exigir_admin(request)
-    contexto = {
-        "empleados": Empleado.objects.all(),
-        "empleado": None,
-        "registros": [],
-        "meses": [],
-        "mes_elegido": "",
-    }
-    empleado_id = request.GET.get("empleado", "")
-    if empleado_id.isdigit():
-        empleado = get_object_or_404(Empleado, pk=empleado_id)
-        contexto.update(_meses_de(empleado, request.GET.get("mes", "")))
-    return render(request, "liquidaciones/lista.html", contexto)
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx.update(
+            empleados=Empleado.objects.all(),
+            empleado=None,
+            registros=[],
+            meses=[],
+            mes_elegido="",
+        )
+        empleado_id = self.request.GET.get("empleado", "")
+        if empleado_id.isdigit():
+            empleado = get_object_or_404(Empleado, pk=empleado_id)
+            ctx.update(_meses_de(empleado, self.request.GET.get("mes", "")))
+        return ctx
 
 
 def _meses_de(empleado, mes_elegido):
@@ -42,9 +36,7 @@ def _meses_de(empleado, mes_elegido):
     if mes_elegido not in dict(meses):
         mes_elegido = ""
     registros = [r for r in todos if not mes_elegido or r.clave == mes_elegido]
-    for registro in registros:
-        registro.ultimos = list(registro.servicios()[:5])
-        registro.cantidad = registro.servicios().count()
+    RegistroMensual.cargar_resumenes(empleado, registros)
     return {"empleado": empleado, "registros": registros, "meses": meses, "mes_elegido": mes_elegido}
 
 
@@ -90,9 +82,8 @@ class _ListadoServiciosDelMes(ListadoMixin, _ServiciosDelMes):
         return [(str(s.pk), s.nombre_servicio, s.pk) for s in Servicio.objects.filter(pk__in=realizados)]
 
 
-class ServiciosDelMesView(LoginRequiredMixin, UserPassesTestMixin, _ListadoServiciosDelMes):
-    def test_func(self):
-        return self.request.user.is_superuser
+class ServiciosDelMesView(AdminMixin, _ListadoServiciosDelMes):
+    pass
 
 
 class MisLiquidacionesView(EmpleadoSoloLecturaMixin, TemplateView):

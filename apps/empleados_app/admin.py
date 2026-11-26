@@ -1,6 +1,6 @@
 from django.contrib import admin, messages
 from .forms import EmpleadoCrearForm, EmpleadoEditarForm
-from .models import Rol, Empleado, HistorialAcceso
+from .models import Rol, Empleado
 
 
 @admin.register(Rol)
@@ -70,11 +70,3 @@ class EmpleadoAdmin(admin.ModelAdmin):
     def habilitar(self, request, queryset):
         n = self._cambiar_estado(request, queryset, True)
         self.message_user(request, f"{n} empleado(s) habilitado(s).")
-
-
-@admin.register(HistorialAcceso)
-class HistorialAccesoAdmin(admin.ModelAdmin):
-    list_display = ("id", "email_ingresado", "empleado", "fecha_hora", "resultado",)
-    list_filter = ("resultado", "fecha_hora")
-    search_fields = ("email_ingresado",)
-    

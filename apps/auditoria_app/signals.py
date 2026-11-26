@@ -2,7 +2,7 @@ from datetime import datetime
 from django.contrib.auth.signals import user_logged_in, user_login_failed
 from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
-from django.utils import timezone
+from apps.formatos import fecha_hora
 from .contexto import quien
 from .models import RegistroCambio
 
@@ -37,7 +37,7 @@ def _texto(campo, valor):
     if isinstance(valor, bool):
         return "Sí" if valor else "No"
     if isinstance(valor, datetime):
-        return timezone.localtime(valor).strftime("%d/%m/%Y %H:%M")
+        return fecha_hora(valor)
     if campo.is_relation:
         relacionado = campo.related_model._base_manager.filter(pk=valor).first()
         return str(relacionado) if relacionado else str(valor)

@@ -83,27 +83,3 @@ class Empleado(models.Model):
                 if self.activo:
                     usuario.estado = usuario.Estado.APROBADO
                 usuario.save(update_fields=["is_active", "estado"])
-
-
-class HistorialAcceso(models.Model):
-    empleado = models.ForeignKey(
-        Empleado,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="historial_accesos",
-    )
-    fecha_hora = models.DateTimeField(auto_now_add=True)
-    resultado = models.BooleanField()
-    email_ingresado = models.CharField(max_length=50)
-
-    class Meta:
-        db_table = "historial_accesos"
-        ordering = ["-fecha_hora"]
-        verbose_name = "historial de acceso"
-        verbose_name_plural = "historiales de acceso"
-
-    def __str__(self):
-        resultado = "correcto" if self.resultado else "fallido"
-        return f"{self.email_ingresado} - {resultado} - {self.fecha_hora:%d/%m/%Y %H:%M}"
-

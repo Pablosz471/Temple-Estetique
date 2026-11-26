@@ -45,7 +45,12 @@ class RegistroAsistencia(models.Model):
 
     def calcular_comision(self):
         total = self.servicios_realizados.filter(activo=True).aggregate(total=Sum("monto_servicio"))["total"]
-        return ((total or Decimal("0")) * self.PORCENTAJE_COMISION).quantize(Decimal("0.01"))
+        return self.comision_de(total)
+
+    @classmethod
+    def comision_de(cls, total):
+        """Comisión que corresponde a un total generado (None cuenta como cero)."""
+        return ((total or Decimal("0")) * cls.PORCENTAJE_COMISION).quantize(Decimal("0.01"))
 
     def actualizar_comision(self):
         """Solo las asistencias cerradas tienen comisión calculada."""

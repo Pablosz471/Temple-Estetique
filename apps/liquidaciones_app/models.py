@@ -1,6 +1,7 @@
 from decimal import Decimal
 from django.db import models
-from django.db.models import Sum
+from django.db.models import Count, F, Sum, Window
+from django.db.models.functions import RowNumber, TruncMonth
 from django.utils import timezone
 
 MESES = (
@@ -49,7 +50,7 @@ class RegistroMensual(models.Model):
         total = ServicioRealizado.objects.filter(
             activo=True, empleado_id=empleado_id, fecha_hora__year=anio, fecha_hora__month=mes
         ).aggregate(total=Sum("monto_servicio"))["total"] or Decimal("0")
-        comision = (total * RegistroAsistencia.PORCENTAJE_COMISION).quantize(Decimal("0.01"))
+        comision = RegistroAsistencia.comision_de(total)
         registro, _ = cls.objects.update_or_create(
             empleado_id=empleado_id,
             anio=anio,
@@ -80,5 +81,39 @@ class RegistroMensual(models.Model):
             fecha_hora__year=self.anio,
             fecha_hora__month=self.mes,
         ).select_related("servicio")
+
+    @staticmethod
+    def cargar_resumenes(empleado, registros, cantidad_ultimos=5):
+        """Agrega a cada registro `ultimos` y `cantidad` con una sola consulta."""
+        from apps.servicios_app.models import ServicioRealizado
+
+        servicios = ServicioRealizado.objects.filter(activo=True, empleado=empleado)
+        if len(registros) == 1:
+            servicios = servicios.filter(
+                fecha_hora__year=registros[0].anio, fecha_hora__month=registros[0].mes
+            )
+        mes = TruncMonth("fecha_hora")
+        servicios = (
+            servicios.annotate(
+                posicion=Window(
+                    RowNumber(),
+                    partition_by=mes,
+                    order_by=[F("fecha_hora").desc(), F("pk").desc()],
+                ),
+                cantidad_del_mes=Window(Count("pk"), partition_by=mes),
+            )
+            .filter(posicion__lte=cantidad_ultimos)
+            .select_related("servicio")
+            .order_by("-fecha_hora", "-pk")
+        )
+
+        por_mes = {}
+        for servicio in servicios:
+            clave = timezone.localtime(servicio.fecha_hora).strftime("%Y-%m")
+            por_mes.setdefault(clave, []).append(servicio)
+
+        for registro in registros:
+            registro.ultimos = por_mes.get(registro.clave, [])
+            registro.cantidad = registro.ultimos[0].cantidad_del_mes if registro.ultimos else 0
 
 

@@ -1,32 +1,16 @@
-from django.utils import timezone
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, DetailView
+from django.views.generic import CreateView, UpdateView, DetailView
 
 from apps.asistencias_app.services import cerrar_vencidas
 from apps.empleados_app.models import Empleado
-from apps.listados import ListadoMixin
+from apps.formatos import fecha_hora
+from apps.mixins import AdminMixin, GuardarMixin, TablaAdminMixin
 
 from .forms import ServicioForm, RegistrarServicioForm, EditarRealizadoForm
 from .services import ServicioError, cambiar_estado_realizado
 from .models import Servicio, ServicioRealizado
-
-
-class AdminMixin(LoginRequiredMixin, UserPassesTestMixin):
-    def test_func(self): return self.request.user.is_superuser
-
-
-class TablaAdminMixin(AdminMixin, ListadoMixin, ListView):
-    template_name = "componentes/crud_lista.html"; paginate_by = 20; columnas = ()
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx.update(titulo=self.titulo, descripcion=self.descripcion, columnas=self.columnas, crear_url=self.crear_url, lista_url=self.lista_url)
-        ctx["filas"] = [{"valores": self.valores(obj), "editar_url": self.editar_url(obj), "eliminar_url": self.eliminar_url(obj), "baja_texto": self.baja_texto(obj), "inhabilitada": not obj.activo} for obj in ctx["object_list"]]
-        return ctx
-    def baja_texto(self, obj):
-        return "Inhabilitar"
 
 
 class ServicioListView(TablaAdminMixin):
@@ -43,7 +27,6 @@ class ServicioListView(TablaAdminMixin):
     def valores(self, o): return (o.nombre_servicio, o.descripcion, f"$ {o.precio}","Habilitado" if o.activo else "Inhabilitado")
     def editar_url(self, o): return reverse_lazy("operaciones:servicio_editar", args=[o.pk])
     def eliminar_url(self, o): return reverse_lazy("operaciones:servicio_eliminar", args=[o.pk])
-    def baja_texto(self, o): return "Inhabilitar" if o.activo else "Habilitar"
 
 
 class RealizadoListView(TablaAdminMixin):
@@ -82,7 +65,7 @@ class RealizadoListView(TablaAdminMixin):
 
     def valores(self, o):
         return (
-            timezone.localtime(o.fecha_hora).strftime("%d/%m/%Y %H:%M"),
+            fecha_hora(o.fecha_hora),
             o.servicio.nombre_servicio,
             str(o.empleado),
             f"$ {o.monto_servicio}",
@@ -91,12 +74,7 @@ class RealizadoListView(TablaAdminMixin):
 
     def editar_url(self, o): return reverse_lazy("operaciones:realizado_editar", args=[o.pk])
     def eliminar_url(self, o): return reverse_lazy("operaciones:realizado_estado", args=[o.pk])
-    def baja_texto(self, o): return "Inhabilitar" if o.activo else "Habilitar"
 
-
-
-class GuardarMixin:
-    def form_valid(self, form): messages.success(self.request, "Cambios guardados correctamente."); return super().form_valid(form)
 
 
 class ServicioCreateView(AdminMixin, GuardarMixin, CreateView):

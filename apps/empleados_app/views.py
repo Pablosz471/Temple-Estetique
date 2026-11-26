@@ -1,31 +1,10 @@
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, DetailView
+from django.views.generic import CreateView, UpdateView, DetailView
 from django.shortcuts import redirect
-from apps.listados import ListadoMixin
+from apps.mixins import AdminMixin, GuardarMixin, TablaAdminMixin
 from .forms import EmpleadoCrearForm, EmpleadoEditarForm
 from .models import Empleado, Rol
-
-
-class AdminMixin(LoginRequiredMixin, UserPassesTestMixin):
-    def test_func(self):
-        return self.request.user.is_superuser
-
-
-class TablaAdminMixin(AdminMixin, ListadoMixin, ListView):
-    template_name = "componentes/crud_lista.html"
-    paginate_by = 20
-    columnas = ()
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx.update(titulo=self.titulo, descripcion=self.descripcion, columnas=self.columnas, crear_url=self.crear_url, lista_url=self.lista_url)
-        ctx["filas"] = [{"valores": self.valores(obj), "editar_url": self.editar_url(obj), "eliminar_url": self.eliminar_url(obj), "baja_texto": self.baja_texto(obj), "inhabilitada": not obj.activo} for obj in ctx["object_list"]]
-        return ctx
-
-    def baja_texto(self, obj):
-        return "Inhabilitar"
 
 
 class EmpleadoListView(TablaAdminMixin):
@@ -59,17 +38,8 @@ class EmpleadoListView(TablaAdminMixin):
         return (str(obj), obj.usuario.username, obj.dni, obj.rol.nombre_rol, "Activo" if obj.activo else "Inactivo")
 
 
-    def baja_texto(self, obj):
-        return "Inhabilitar" if obj.activo else "Habilitar"
-
     def editar_url(self, obj): return reverse_lazy("empleados:empleado_editar", args=[obj.pk])
     def eliminar_url(self, obj): return reverse_lazy("empleados:empleado_estado", args=[obj.pk])
-
-
-class GuardarMixin:
-    def form_valid(self, form):
-        messages.success(self.request, "Cambios guardados correctamente.")
-        return super().form_valid(form)
 
 
 class EmpleadoCreateView(AdminMixin, GuardarMixin, CreateView):
