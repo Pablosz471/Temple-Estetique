@@ -6,6 +6,7 @@ class RegistroCambio(models.Model):
     class Accion(models.TextChoices):
         CREACION = "creacion", "Alta"
         MODIFICACION = "modificacion", "Modificación"
+        INHABILITACION = "inhabilitacion", "Inhabilitación"
         ELIMINACION = "eliminacion", "Eliminación"
         INGRESO = "ingreso", "Ingreso al sistema"
         INGRESO_FALLIDO = "ingreso_fallido", "Intento de ingreso fallido"

@@ -28,7 +28,11 @@ class HistorialListView(LoginRequiredMixin, UserPassesTestMixin, ListadoMixin, L
         },
         {
             "param": "accion", "etiqueta": "Acción", "campo": "accion",
-            "opciones": lambda: [(v, e, v) for v, e in RegistroCambio.Accion.choices],
+            "opciones": [
+                (v, e, v)
+                for v, e in RegistroCambio.Accion.choices
+                if v != RegistroCambio.Accion.ELIMINACION
+            ],
         },
         {
             "param": "seccion", "etiqueta": "Sección",

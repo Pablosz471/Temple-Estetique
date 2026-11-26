@@ -644,8 +644,26 @@ button:disabled {
 
 /* filas inhabilitadas */
 tr.inhabilitado td {
-  background:#c6c5c3;
-  color:#5F5B55;
+  background:#ffa08323;
+  color:#6B3F2E;
+}
+tr.inhabilitado .enlace-peligro {
+  color:#9C3224;
+}
+
+/* historial de cambios */
+tr.accion-creacion td {
+  background:#dce0b47b;
+}
+tr.accion-modificacion td {
+  background:#fbe6a963;
+}
+tr.accion-inhabilitacion td {
+  background:#ffa08323;
+}
+tr.accion-ingreso td,
+tr.accion-ingreso_fallido td {
+  background:#83f6fe20;
 }
 
 

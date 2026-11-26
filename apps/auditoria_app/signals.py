@@ -15,6 +15,7 @@ APPS_SEGUIDAS = {
 }
 MODELOS_EXCLUIDOS = {"RegistroCambio", "RegistroMensual"}
 CAMPOS_IGNORADOS = {"password", "last_login", "comision_diaria"}
+CAMPOS_DE_ESTADO = ("activo", "is_active")
 
 
 def _seguido(modelo):
@@ -82,6 +83,14 @@ def _diferencias(instancia, previo, update_fields):
     return cambios
 
 
+def _es_inhabilitacion(instancia, previo, update_fields):
+    return any(
+        previo.get(campo.attname) is True and getattr(instancia, campo.attname) is False
+        for campo in _campos(instancia, update_fields)
+        if campo.name in CAMPOS_DE_ESTADO
+    )
+
+
 def _registrar(accion, instancia, detalle):
     usuario, nombre = quien()
     try:
@@ -119,7 +128,11 @@ def registrar_guardado(sender, instance, created, raw=False, update_fields=None,
     previo = getattr(instance, "_auditoria_previo", None)
     cambios = _diferencias(instance, previo, update_fields)
     if cambios:
-        _registrar(RegistroCambio.Accion.MODIFICACION, instance, "; ".join(cambios))
+        if _es_inhabilitacion(instance, previo, update_fields):
+            accion = RegistroCambio.Accion.INHABILITACION
+        else:
+            accion = RegistroCambio.Accion.MODIFICACION
+        _registrar(accion, instance, "; ".join(cambios))
 
 
 @receiver(post_delete)

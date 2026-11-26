@@ -19,7 +19,7 @@
             <th scope="col">Sección</th><th scope="col">Registro</th><th scope="col">Detalle</th>
         </tr></thead>
         <tbody>
-            {% for r in page_obj %}<tr>
+            {% for r in page_obj %}<tr class="accion-{{ r.accion }}">
                 <td class="numero">{{ r.fecha_hora|date:"d/m/Y H:i:s" }}</td>
                 <td>{{ r.usuario_nombre|default:"—" }}</td>
                 <td>{{ r.get_accion_display }}</td>
