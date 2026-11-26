@@ -1,4 +1,3 @@
-from decimal import Decimal
 from django.utils import timezone
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -8,9 +7,7 @@ from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DetailView
 
-from apps.asistencias_app.models import RegistroAsistencia
 from apps.asistencias_app.services import cerrar_vencidas
-from apps.empleados_app.mixins import EmpleadoSoloLecturaMixin
 from apps.empleados_app.models import Empleado
 from apps.listados import ListadoMixin
 
@@ -98,57 +95,6 @@ class RealizadoListView(TablaAdminMixin):
     def eliminar_url(self, o): return reverse_lazy("operaciones:realizado_estado", args=[o.pk])
     def baja_texto(self, o): return "Inhabilitar" if o.activo else "Habilitar"
 
-
-
-class MisServiciosListView(EmpleadoSoloLecturaMixin, ListadoMixin, ListView):
-    model = ServicioRealizado
-    template_name = "componentes/crud_lista.html"
-    paginate_by = 20
-    columnas = ("Fecha y hora", "Servicio", "Monto", "Tu comisión (40%)")
-    busqueda = ("servicio__nombre_servicio",)
-    ordenes = (
-        ("-fecha", "Fecha (más reciente)", ("-fecha_hora",)),
-        ("fecha", "Fecha (más antigua)", ("fecha_hora",)),
-        ("-monto", "Monto (mayor a menor)", ("-monto_servicio",)),
-        ("monto", "Monto (menor a mayor)", ("monto_servicio",)),
-    )
-    campo_fecha = "fecha_hora"
-    filtros = ()
-
-    def _filtros_resueltos(self):
-        propios = ServicioRealizado.objects.filter(activo=True, empleado=self.request.user.empleado)
-        servicios = Servicio.objects.filter(pk__in=propios.values("servicio"))
-        self.filtros = (
-            {
-                "param": "servicio", "etiqueta": "Servicio", "campo": "servicio",
-                "opciones": lambda: [(str(s.pk), s.nombre_servicio, s.pk) for s in servicios],
-            },
-        )
-        return super()._filtros_resueltos()
-
-    def get_queryset(self):
-        propios = super().get_queryset().filter(activo=True, empleado=self.request.user.empleado)
-        return propios.select_related("servicio")
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx.update(
-            titulo="Mis servicios realizados",
-            descripcion="Consultá los servicios que realizaste y tu comisión.",
-            columnas=self.columnas,
-            solo_lectura=True,
-        )
-        ctx["filas"] = [{"valores": self._valores(o)} for o in ctx["object_list"]]
-        return ctx
-
-    def _valores(self, o):
-        comision = (o.monto_servicio * RegistroAsistencia.PORCENTAJE_COMISION).quantize(Decimal("0.01"))
-        return (
-            timezone.localtime(o.fecha_hora).strftime("%d/%m/%Y %H:%M"),
-            o.servicio.nombre_servicio,
-            f"$ {o.monto_servicio}",
-            f"$ {comision}",
-        )
 
 
 class GuardarMixin:

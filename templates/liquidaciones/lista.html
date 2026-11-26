@@ -1,14 +1,19 @@
 {% extends 'base.html' %}
 
-{% block title %}Liquidaciones{% endblock %}
+{% block title %}{% if solo_lectura %}Mis liquidaciones{% else %}Liquidaciones{% endif %}{% endblock %}
 
 {% block content %}
-<p class="antetitulo">Gestión del salón</p>
+<p class="antetitulo">{% if solo_lectura %}Tu espacio de trabajo{% else %}Gestión del salón{% endif %}</p>
 <div class="encabezado">
+  {% if solo_lectura %}
+  <div><h1>Mis liquidaciones</h1><p>Lo que generaste en cada mes y tu comisión del 40%.</p></div>
+  {% else %}
   <div><h1>Liquidaciones mensuales</h1><p>Lo que generó cada empleado en el mes y su comisión del 40%.</p></div>
+  {% endif %}
 </div>
 
 <form method="get" class="panel">
+  {% if not solo_lectura %}
   <div class="campo">
     <label for="empleado">Empleado</label>
     <select name="empleado" id="empleado" required>
@@ -18,6 +23,7 @@
       {% endfor %}
     </select>
   </div>
+  {% endif %}
   {% if empleado %}
   <div class="campo">
     <label for="mes">Mes</label>
@@ -55,7 +61,7 @@
     {% endfor %}
   </div>
   {% if registro.cantidad %}
-  <div class="acciones"><a class="boton secundario" href="{% url 'liquidaciones:servicios' registro.pk %}">Ver más servicios realizados</a></div>
+  <div class="acciones"><a class="boton secundario" href="{% if solo_lectura %}{% url 'liquidaciones:mis_servicios_del_mes' registro.pk %}{% else %}{% url 'liquidaciones:servicios' registro.pk %}{% endif %}">Ver más servicios realizados</a></div>
   {% endif %}
 </section>
 {% endfor %}
