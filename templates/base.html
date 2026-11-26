@@ -63,6 +63,8 @@
             {% if request.resolver_match.url_name == 'mis_asistencias' %}aria-current="page"{% endif %}>Mis asistencias</a>
             <a href="{% url 'liquidaciones:mis_liquidaciones' %}"
             {% if request.resolver_match.namespace == 'liquidaciones' %}aria-current="page"{% endif %}>Mis liquidaciones</a>
+            <a href="{% url 'cuentas:cambiar_password' %}"
+            {% if request.resolver_match.url_name == 'cambiar_password' %}aria-current="page"{% endif %}>Cambiar contraseña</a>
             {% endif %}
         </nav>
         {% endif %}
