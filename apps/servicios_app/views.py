@@ -1,8 +1,6 @@
 from django.utils import timezone
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.db.models import Q
-from django.db.models.deletion import ProtectedError
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DetailView
@@ -33,7 +31,7 @@ class TablaAdminMixin(AdminMixin, ListadoMixin, ListView):
 
 class ServicioListView(TablaAdminMixin):
     model = Servicio; titulo = "Servicios"; descripcion = "Servicios disponibles en la estética."
-    columnas = ("Servicio", "Descripción", "Precio"); busqueda = ("nombre_servicio", "descripcion")
+    columnas = ("Servicio", "Descripción", "Precio", "Estado"); busqueda = ("nombre_servicio", "descripcion")
     crear_url = reverse_lazy("operaciones:servicio_crear"); lista_url = reverse_lazy("operaciones:servicios")
     ordenes = (
         ("nombre", "Nombre (A-Z)", ("nombre_servicio",)),
@@ -42,7 +40,7 @@ class ServicioListView(TablaAdminMixin):
         ("-precio", "Precio (mayor a menor)", ("-precio",)),
     )
     
-    def valores(self, o): return (o.nombre_servicio, o.descripcion, f"$ {o.precio}","habilitado" if o.activo else "inhabilitado")
+    def valores(self, o): return (o.nombre_servicio, o.descripcion, f"$ {o.precio}","Habilitado" if o.activo else "Inhabilitado")
     def editar_url(self, o): return reverse_lazy("operaciones:servicio_editar", args=[o.pk])
     def eliminar_url(self, o): return reverse_lazy("operaciones:servicio_eliminar", args=[o.pk])
     def baja_texto(self, o): return "Inhabilitar" if o.activo else "Habilitar"
