@@ -21,14 +21,11 @@ Inicio
 <a href="{% url 'empleados:empleados' %}">
 <span>Empleado(s) activo(s)</span><strong>{{ empleados_activos }}</strong>
 </a>
-<a href="{% url 'operaciones:servicios' %}">
-<span>Servicios</span><strong>{{ servicios_activos }}</strong>
+<a href="{% url 'operaciones:realizados' %}">
+<span>Servicio(s) realizado(s) hoy</span><strong>{{ servicios_realizados_hoy }}</strong>
 </a>
 <a href="{% url 'asistencias:lista' %}">
 <span>Asistencias de hoy</span><strong>{{ asistencias_hoy }}</strong>
-</a>
-<a href="{% url 'liquidaciones:lista' %}">
-<span>Liquidaciones del mes</span><strong>{{ liquidaciones_mes }}</strong>
 </a>
 </div>
 {% endif %}
