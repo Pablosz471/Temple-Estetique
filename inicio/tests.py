@@ -89,6 +89,18 @@ class InicioTests(PruebaBase):
         otro = reverse("liquidaciones:mis_servicios_del_mes", args=[ajeno.pk])
         self.assertEqual(self.client.get(otro).status_code, 404)
 
+    def test_el_detalle_del_mes_muestra_la_comision_de_cada_servicio(self):
+        registro = RegistroMensual.objects.get(empleado=self.ana)
+        jefa = self.crear_empleado("jefa", "20111222", admin=True)
+        for usuario, nombre in (
+            (self.ana.usuario, "liquidaciones:mis_servicios_del_mes"),
+            (jefa.usuario, "liquidaciones:servicios"),
+        ):
+            self.client.force_login(usuario)
+            respuesta = self.client.get(reverse(nombre, args=[registro.pk]))
+            self.assertContains(respuesta, "Comisión (40%)</th>")
+            self.assertContains(respuesta, "<td>$ 400,00</td>")
+
     def test_la_lista_de_servicios_tiene_una_columna_por_dato(self):
         self.client.force_login(self.crear_empleado("jefa", "20111222", admin=True).usuario)
         for nombre in ("operaciones:servicios", "operaciones:realizados"):

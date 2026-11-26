@@ -64,6 +64,12 @@ class ServicioRealizado(models.Model):
         return f"{self.servicio} - {empleado} - {timezone.localtime(self.fecha_hora):%d/%m/%Y %H:%M}"
 
     @property
+    def comision(self):
+        from apps.asistencias_app.models import RegistroAsistencia
+
+        return RegistroAsistencia.comision_de(self.monto_servicio)
+
+    @property
     def asistencia_en_curso(self):
         """¿La asistencia de ese día sigue abierta (sin salida registrada)?"""
         from apps.asistencias_app.models import RegistroAsistencia
