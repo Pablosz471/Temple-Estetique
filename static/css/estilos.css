@@ -339,6 +339,34 @@ textarea {
 .lista-recientes>a:hover {
   background:#EAD8B7;
 }
+.bloque {
+  margin-top:40px;
+  padding:24px;
+  background:var(--papel);
+  border:1px solid var(--borde);
+  border-radius:var(--radio);
+}
+.bloque h2 {
+  margin:0 0 16px;
+}
+.bloque .lista-recientes>.fila:last-child {
+  border-bottom:0;
+  padding-bottom:0;
+}
+.bloque p {
+  margin-bottom:0;
+}
+.punto {
+  display:inline-block;
+  width:10px;
+  height:10px;
+  margin-right:8px;
+  border-radius:50%;
+  background:#2E7D32;
+}
+.punto.finalizado {
+  background:#C62828;
+}
 .herramientas {
   display:flex;
   align-items:flex-end;
