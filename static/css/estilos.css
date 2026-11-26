@@ -362,6 +362,9 @@ textarea {
 .bloque p {
   margin-bottom:0;
 }
+.navegacion .a-la-derecha {
+  margin-left:auto;
+}
 .punto {
   display:inline-block;
   width:10px;

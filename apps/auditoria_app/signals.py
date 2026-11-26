@@ -19,8 +19,10 @@ CAMPOS_DE_ESTADO = ("activo", "is_active")
 
 
 def _seguido(modelo):
+    # Las migraciones usan modelos históricos y pueden correr antes de que exista el historial.
     return (
-        modelo._meta.app_label in APPS_SEGUIDAS
+        modelo.__module__ != "__fake__"
+        and modelo._meta.app_label in APPS_SEGUIDAS
         and modelo.__name__ not in MODELOS_EXCLUIDOS
     )
 

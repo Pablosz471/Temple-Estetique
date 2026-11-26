@@ -9,7 +9,7 @@
         Inicio
         {% endblock %}
         · {{ organizacion_nombre }}</title>
-        <link rel="stylesheet" href="{% static 'css/estilos.css' %}?v=8">
+        <link rel="stylesheet" href="{% static 'css/estilos.css' %}?v=9">
         <link rel="icon" type="image/png" href="{% static 'css/media/logo_temple.png' %}">
     </head>
     <body>
@@ -27,7 +27,7 @@
                 {% if user.is_superuser %}
                 Administrador
                 {% else %}
-                Operador
+                Empleado
                 {% endif %}
                 </small>
                 </span>
@@ -63,7 +63,7 @@
             {% if request.resolver_match.url_name == 'mis_asistencias' %}aria-current="page"{% endif %}>Mis asistencias</a>
             <a href="{% url 'liquidaciones:mis_liquidaciones' %}"
             {% if request.resolver_match.namespace == 'liquidaciones' %}aria-current="page"{% endif %}>Mis liquidaciones</a>
-            <a href="{% url 'cuentas:cambiar_password' %}"
+            <a class="a-la-derecha" href="{% url 'cuentas:cambiar_password' %}"
             {% if request.resolver_match.url_name == 'cambiar_password' %}aria-current="page"{% endif %}>Cambiar contraseña</a>
             {% endif %}
         </nav>
