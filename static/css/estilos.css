@@ -349,6 +349,12 @@ textarea {
 .bloque h2 {
   margin:0 0 16px;
 }
+.bloque .encabezado {
+  margin-bottom:16px;
+}
+.bloque .encabezado h2 {
+  margin:0;
+}
 .bloque .lista-recientes>.fila:last-child {
   border-bottom:0;
   padding-bottom:0;

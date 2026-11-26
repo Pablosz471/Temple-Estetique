@@ -9,7 +9,7 @@
         Inicio
         {% endblock %}
         · {{ organizacion_nombre }}</title>
-        <link rel="stylesheet" href="{% static 'css/estilos.css' %}?v=7">
+        <link rel="stylesheet" href="{% static 'css/estilos.css' %}?v=8">
         <link rel="icon" type="image/png" href="{% static 'css/media/logo_temple.png' %}">
     </head>
     <body>
@@ -58,7 +58,9 @@
             {% if request.resolver_match.namespace == 'liquidaciones' %}aria-current="page"{% endif %}>Liquidaciones</a>
             <a href="{% url 'auditoria:lista' %}"
             {% if request.resolver_match.namespace == 'auditoria' %}aria-current="page"{% endif %}>Historial</a>
-
+            {% elif user.empleado %}
+            <a href="{% url 'operaciones:mis_servicios' %}"
+            {% if request.resolver_match.url_name == 'mis_servicios' %}aria-current="page"{% endif %}>Mis servicios realizados</a>
             {% endif %}
         </nav>
         {% endif %}
