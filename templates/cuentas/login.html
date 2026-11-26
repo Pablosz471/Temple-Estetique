@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}
 Iniciar sesión
@@ -13,9 +14,8 @@ Iniciar sesión
         <div class="nota">Las cuentas deben ser creadas por el administrador.</div>
     </section>
     <section class="panel">
-        <div class="auth-marca" aria-label="Temple Estetique">
-            <span class="auth-emblema" aria-hidden="true">T</span>
-            <strong>TEMPLE</strong><small>ESTÉTIQUE</small>
+        <div class="auth-marca">
+            <img class="logo-acceso" src="{% static 'css/media/logo_temple.png' %}" alt="Temple Estetique" width="180" height="180">
         </div>
         <h2>Iniciar sesión</h2>
         <p>Ingresá con tu nombre de usuario y contraseña.</p>

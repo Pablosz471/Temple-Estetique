@@ -10,12 +10,13 @@
         {% endblock %}
         · {{ organizacion_nombre }}</title>
         <link rel="stylesheet" href="{% static 'css/estilos.css' %}">
+        <link rel="icon" type="image/png" href="{% static 'css/media/logo_temple.png' %}">
     </head>
     <body>
         <a class="skip" href="#contenido">Saltar al contenido</a>
         <header class="cabecera">
             <a class="marca" href="{% url 'inicio:home' %}">
-                <span class="sello" aria-hidden="true">T</span>
+                <img class="logo-cabecera" src="{% static 'css/media/logo_temple.png' %}" alt="" width="56" height="56">
                 <span>{{ organizacion_nombre }}<small>Belleza, bienestar y confianza</small>
                 </span>
             </a>
