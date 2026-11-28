@@ -1,6 +1,7 @@
 from decimal import Decimal
 from django.db import models
 from django.db.models import F, Q, Sum
+from django.utils import timezone
 
 
 class RegistroAsistencia(models.Model):
@@ -37,7 +38,7 @@ class RegistroAsistencia(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.empleado} - {self.fecha_hora_ingreso:%d/%m/%Y}"
+        return f"{self.empleado} - {timezone.localtime(self.fecha_hora_ingreso):%d/%m/%Y}"
 
     @property
     def abierta(self):

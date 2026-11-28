@@ -1,7 +1,7 @@
 from decimal import Decimal
 from django.test import TestCase, override_settings
 from django.urls import reverse
-from apps.asistencias_app.services import registrar_ingreso, registrar_salida
+from apps.asistencias_app.services import reabrir_asistencia, registrar_ingreso, registrar_salida
 from apps.empleados_app.models import Empleado, Rol
 from cuentas.models import Usuario
 from .forms import RegistrarServicioForm
@@ -36,6 +36,51 @@ class RegistrarServicioTests(TestCase):
         self.facial = Servicio.objects.create(
             nombre_servicio="Limpieza facial", descripcion="Prueba", precio=Decimal("8000")
         )
+
+    def crear_servicio(self, nombre):
+        self.client.force_login(self.admin)
+        return self.client.post(
+            reverse("operaciones:servicio_crear"),
+            {"nombre_servicio": nombre, "descripcion": "Prueba", "precio": "100"},
+        )
+
+    def test_no_se_repite_el_nombre_de_un_servicio_habilitado(self):
+        respuesta = self.crear_servicio("  LIMPIEZA FACIAL ")
+        self.assertContains(respuesta, "Ya existe un servicio habilitado con ese nombre.")
+        self.assertEqual(Servicio.objects.count(), 1)
+
+    def test_se_repite_el_nombre_de_un_servicio_inhabilitado(self):
+        url = reverse("operaciones:servicio_eliminar", args=[self.facial.pk])
+        self.client.force_login(self.admin)
+        self.client.post(url)
+        self.assertRedirects(
+            self.crear_servicio("Limpieza facial"), reverse("operaciones:servicios")
+        )
+        # El anterior ya no se puede volver a habilitar mientras el nuevo lo esté.
+        respuesta = self.client.post(url, follow=True)
+        self.assertContains(respuesta, "No se puede habilitar")
+        self.facial.refresh_from_db()
+        self.assertFalse(self.facial.activo)
+
+    def test_solo_se_inhabilita_un_realizado_con_la_asistencia_en_curso(self):
+        asistencia = registrar_ingreso(self.empleado)
+        realizado = ServicioRealizado.objects.create(
+            empleado=self.empleado, Registro_asistencia=asistencia, servicio=self.facial,
+            fecha_hora=asistencia.fecha_hora_ingreso, monto_servicio=Decimal("8000"),
+        )
+        registrar_salida(self.empleado)
+        self.client.force_login(self.admin)
+        url = reverse("operaciones:realizado_estado", args=[realizado.pk])
+
+        respuesta = self.client.post(url, follow=True)
+        self.assertContains(respuesta, "No se puede inhabilitar")
+        realizado.refresh_from_db()
+        self.assertTrue(realizado.activo)
+
+        reabrir_asistencia(self.empleado)
+        self.client.post(url)
+        realizado.refresh_from_db()
+        self.assertFalse(realizado.activo)
 
     def opciones(self):
         return list(RegistrarServicioForm().fields["empleado"].queryset)

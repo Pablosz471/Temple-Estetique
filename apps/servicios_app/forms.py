@@ -35,6 +35,7 @@ class RegistrarServicioForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        cerrar_vencidas()
         con_asistencia_abierta = RegistroAsistencia.objects.filter(
             fecha_hora_salida__isnull=True
         ).values("empleado_id")

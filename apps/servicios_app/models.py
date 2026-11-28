@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.db import models, transaction
 
@@ -21,6 +22,18 @@ class Servicio(models.Model):
 
     def __str__(self):
         return self.nombre_servicio
+
+    def clean(self):
+        """No puede haber dos servicios habilitados con el mismo nombre."""
+        if not self.activo:
+            return
+        repetidos = Servicio.objects.filter(
+            activo=True, nombre_servicio__iexact=self.nombre_servicio
+        ).exclude(pk=self.pk)
+        if repetidos.exists():
+            raise ValidationError(
+                {"nombre_servicio": "Ya existe un servicio habilitado con ese nombre."}
+            )
 
 
 class ServicioRealizado(models.Model):

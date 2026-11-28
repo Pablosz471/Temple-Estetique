@@ -1,8 +1,10 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 from decimal import Decimal
+from unittest.mock import patch
 from django.urls import reverse
 from django.utils import timezone
 from apps.pruebas import PruebaBase
+from apps.servicios_app.models import Servicio, ServicioRealizado
 from .models import RegistroAsistencia
 from .services import cerrar_vencidas, registrar_ingreso, registrar_salida
 
@@ -73,6 +75,34 @@ class AsistenciasTests(PruebaBase):
         cierre = timezone.localtime(asistencia.fecha_hora_salida)
         self.assertEqual((cierre.hour, cierre.minute), (23, 59))
         self.assertEqual(cierre.date(), timezone.localtime(ayer).date())
+
+    def test_hasta_las_23_59_se_registra_con_la_fecha_del_dia(self):
+        servicio = Servicio.objects.create(
+            nombre_servicio="Corte", descripcion="Prueba", precio=Decimal("1000")
+        )
+        datos = {"empleado": self.ana.pk, "servicio": servicio.pk}
+        url = reverse("operaciones:realizado_crear")
+        noche = timezone.make_aware(datetime(2026, 3, 10, 23, 59, 30))
+
+        with patch("django.utils.timezone.now", return_value=noche):
+            self.client.force_login(self.admin.usuario)
+            asistencia = registrar_ingreso(self.ana)
+            self.client.post(url, datos)
+            cerrar_vencidas()
+        asistencia.refresh_from_db()
+        self.assertTrue(asistencia.abierta)
+        self.assertEqual(str(asistencia), "ana Prueba - 10/03/2026")
+        self.assertEqual(timezone.localtime(ServicioRealizado.objects.get().fecha_hora), noche)
+
+        # Pasada la medianoche ya no se puede cargar nada en la jornada anterior.
+        with patch("django.utils.timezone.now", return_value=noche + timedelta(minutes=1)):
+            respuesta = self.client.post(url, datos)
+        self.assertTrue(respuesta.context["form"].errors)
+        self.assertEqual(ServicioRealizado.objects.count(), 1)
+        asistencia.refresh_from_db()
+        salida = timezone.localtime(asistencia.fecha_hora_salida)
+        self.assertEqual((salida.day, salida.hour, salida.minute), (10, 23, 59))
+        self.assertEqual(asistencia.comision_diaria, Decimal("400.00"))
 
     def test_la_lista_muestra_acciones_y_estado(self):
         registrar_ingreso(self.ana)

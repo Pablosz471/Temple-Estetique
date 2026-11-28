@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DetailView
@@ -89,10 +90,6 @@ class RealizadoCreateView(AdminMixin, GuardarMixin, CreateView):
     success_url = reverse_lazy("operaciones:realizados")
     titulo = "Registrar servicio realizado"
 
-    def get(self, request, *args, **kwargs):
-        cerrar_vencidas()
-        return super().get(request, *args, **kwargs)
-
 class RealizadoUpdateView(AdminMixin, GuardarMixin, UpdateView):
     model = ServicioRealizado
     form_class = EditarRealizadoForm
@@ -101,6 +98,7 @@ class RealizadoUpdateView(AdminMixin, GuardarMixin, UpdateView):
     titulo = "Editar servicio realizado"
 
     def post(self, request, *args, **kwargs):
+        cerrar_vencidas()
         self.object = self.get_object()
         if not self.object.asistencia_en_curso:
             messages.error(request, EditarRealizadoForm.MENSAJE)
@@ -135,6 +133,14 @@ class ServicioEstadoView(AdminMixin, DetailView):
     def post(self, request, *args, **kwargs):
         servicio = self.get_object()
         servicio.activo = not servicio.activo
+        try:
+            servicio.clean()
+        except ValidationError:
+            messages.error(
+                request,
+                "No se puede habilitar: ya existe un servicio habilitado con ese nombre.",
+            )
+            return redirect("operaciones:servicios")
         servicio.save(update_fields=["activo"])
         messages.success(request, f"Servicio {'habilitado' if servicio.activo else 'inhabilitado'}.")
         return redirect("operaciones:servicios")

@@ -1,4 +1,5 @@
 from django.contrib import admin, messages
+from django.core.exceptions import ValidationError
 from django.http import HttpResponseRedirect
 from .forms import EditarRealizadoForm, RegistrarServicioForm
 from .models import Servicio, ServicioRealizado
@@ -29,6 +30,15 @@ class ServicioAdmin(admin.ModelAdmin):
         cantidad = 0
         for servicio in queryset.filter(activo=False):
             servicio.activo = True
+            try:
+                servicio.clean()
+            except ValidationError:
+                self.message_user(
+                    request,
+                    f"{servicio}: ya existe un servicio habilitado con ese nombre.",
+                    messages.WARNING,
+                )
+                continue
             servicio.save(update_fields=["activo"])
             cantidad += 1
         self.message_user(request, f"{cantidad} servicio(s) habilitado(s).")
@@ -64,7 +74,7 @@ class ServicioRealizadoAdmin(admin.ModelAdmin):
         obj = self.get_object(request, object_id)
         if obj is not None:
             en_curso = obj.asistencia_en_curso
-            extra_context["puede_inhabilitar"] = obj.activo
+            extra_context["puede_inhabilitar"] = obj.activo and en_curso
             extra_context["puede_habilitar"] = (not obj.activo) and en_curso
             extra_context["show_save"] = en_curso
             extra_context["show_save_and_continue"] = en_curso

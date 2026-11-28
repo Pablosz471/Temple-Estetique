@@ -7,7 +7,8 @@ from django.utils import timezone
 from apps.empleados_app.models import Empleado
 from .models import RegistroAsistencia
 
-HORA_CIERRE = time(23, 59)
+# La jornada vale hasta el último instante del día: se muestra como 23:59.
+HORA_CIERRE = time.max
 
 
 class AsistenciaError(Exception):
@@ -16,8 +17,7 @@ class AsistenciaError(Exception):
 
 def _cierre_del_dia(ingreso):
     dia = timezone.localtime(ingreso).date()
-    cierre = timezone.make_aware(datetime.combine(dia, HORA_CIERRE))
-    return max(cierre, ingreso)
+    return timezone.make_aware(datetime.combine(dia, HORA_CIERRE))
 
 
 def _cerrar(asistencia, momento):
