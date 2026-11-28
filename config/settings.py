@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "apps.servicios_app.apps.ServiciosAppConfig",
     "apps.liquidaciones_app.apps.LiquidacionesAppConfig",
     "apps.auditoria_app.apps.AuditoriaAppConfig",
+    "apps.respaldos_app",
 ]
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -106,6 +107,8 @@ STORAGES = {
     },
 }
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+# Carpeta donde se guardan las copias de seguridad (fuera de Git y de los estáticos).
+BACKUPS_DIR = BASE_DIR / "backups"
 LOGIN_URL = "cuentas:login"
 LOGIN_REDIRECT_URL = "inicio:home"
 LOGOUT_REDIRECT_URL = "cuentas:login"

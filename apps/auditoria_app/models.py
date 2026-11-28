@@ -10,6 +10,8 @@ class RegistroCambio(models.Model):
         ELIMINACION = "eliminacion", "Eliminación"
         INGRESO = "ingreso", "Ingreso al sistema"
         INGRESO_FALLIDO = "ingreso_fallido", "Intento de ingreso fallido"
+        BACKUP_CREADO = "backup_creado", "Backup generado"
+        BACKUP_DESCARGADO = "backup_descargado", "Backup descargado"
 
     fecha_hora = models.DateTimeField(auto_now_add=True, db_index=True)
     usuario = models.ForeignKey(

@@ -13,6 +13,7 @@ PANTALLAS_DE_ADMINISTRADOR = (
     "asistencias:lista",
     "liquidaciones:lista",
     "auditoria:lista",
+    "respaldos:lista",
 )
 PANTALLAS_DE_EMPLEADO = (
     "asistencias:mis_asistencias",

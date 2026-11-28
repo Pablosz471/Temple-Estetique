@@ -93,6 +93,14 @@ Planificar la ventana de mantenimiento, conservar la imagen anterior y el respal
 No retroceder únicamente el código si cambió el esquema: validar compatibilidad o
 restaurar el conjunto en un destino nuevo. No ejecutar down -v ni borrar bases.
 
-En un servidor con datos reales, los backups automáticos, su cifrado, conservación
-externa y monitoreo deben ser configurados por el responsable. Los volúmenes Docker
-son persistencia, no un respaldo. Consultar ENTREGA_COMPLETA.txt (ENTREGA_COMPLETA.txt).
+Backups automáticos
+
+El servicio backup crea una copia cuando la última tiene más de 24 horas y conserva
+7 diarias y 4 semanales. El administrador las genera y descarga desde la pantalla
+Backups. En desarrollo quedan en la carpeta backups; en el servidor, en el volumen
+copias_seguridad. Para restaurar un archivo descargado, seguir ENTREGA_COMPLETA.txt.
+Al actualizar una instalación anterior, reconstruir la imagen y aplicar migraciones.
+
+En un servidor con datos reales, el cifrado, la conservación externa y el monitoreo
+de las copias deben ser configurados por el responsable. Los volúmenes Docker son
+persistencia, no un respaldo.

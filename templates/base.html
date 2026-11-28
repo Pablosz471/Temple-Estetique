@@ -56,8 +56,10 @@
             {% if request.resolver_match.namespace == 'asistencias' %}aria-current="page"{% endif %}>Asistencias</a>
             <a href="{% url 'liquidaciones:lista' %}"
             {% if request.resolver_match.namespace == 'liquidaciones' %}aria-current="page"{% endif %}>Liquidaciones</a>
-            <a href="{% url 'auditoria:lista' %}"
+            <a class="a-la-derecha" href="{% url 'auditoria:lista' %}"
             {% if request.resolver_match.namespace == 'auditoria' %}aria-current="page"{% endif %}>Historial</a>
+            <a href="{% url 'respaldos:lista' %}"
+            {% if request.resolver_match.namespace == 'respaldos' %}aria-current="page"{% endif %}>Backups</a>
             {% elif user.empleado %}
             <a href="{% url 'asistencias:mis_asistencias' %}"
             {% if request.resolver_match.url_name == 'mis_asistencias' %}aria-current="page"{% endif %}>Mis asistencias</a>

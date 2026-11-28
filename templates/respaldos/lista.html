@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}Backups{% endblock %}
+
+{% block content %}
+<p class="antetitulo">Administración</p>
+<div class="encabezado">
+    <div><h1>Backups</h1><p>Copias de seguridad de la base de datos. Se genera una automáticamente cada 24 horas.</p></div>
+</div>
+
+{% if ultima and atrasada %}
+<div class="aviso error" role="alert">El último backup tiene más de 24 horas. Generá uno ahora y avisá al responsable técnico si esto se repite.</div>
+{% endif %}
+{% if ultima and conviene_descargar %}
+<div class="aviso" role="status">Hace {{ dias_sin_descargar }} días o más que no se descarga una copia. Descargá el último backup y guardalo fuera de esta computadora.</div>
+{% endif %}
+
+<section class="panel">
+    <h2>Último backup disponible</h2>
+    {% if ultima %}
+    <p><strong>{{ ultima.momento|date:'d/m/Y H:i' }}</strong> · {{ ultima.tamanio|filesizeformat }}</p>
+    {% else %}
+    <p>Todavía no hay ningún backup.</p>
+    {% endif %}
+    <p class="ayuda">Última descarga: {% if ultima_descarga %}{{ ultima_descarga.fecha_hora|date:'d/m/Y H:i' }} por {{ ultima_descarga.usuario_nombre }}{% else %}nunca{% endif %}.</p>
+    <div class="acciones">
+        {% if ultima %}
+        <form method="post" action="{% url 'respaldos:descargar' %}">{% csrf_token %}<button type="submit">Descargar último</button></form>
+        {% endif %}
+        <form method="post" action="{% url 'respaldos:generar' %}">{% csrf_token %}<button class="secundario" type="submit">Generar uno ahora</button></form>
+    </div>
+    <p class="ayuda">El archivo contiene datos personales: guardalo en un lugar seguro.</p>
+</section>
+
+{% if copias %}
+<div class="tabla-scroll" tabindex="0" role="region" aria-label="Backups guardados">
+    <table>
+        <caption>{{ copias|length }} copia{{ copias|length|pluralize }} guardada{{ copias|length|pluralize }}</caption>
+        <thead><tr><th scope="col">Fecha y hora</th><th scope="col">Archivo</th><th scope="col">Tamaño</th></tr></thead>
+        <tbody>
+            {% for copia in copias %}<tr>
+                <td class="numero">{{ copia.momento|date:'d/m/Y H:i' }}</td>
+                <td>{{ copia.nombre }}</td>
+                <td>{{ copia.tamanio|filesizeformat }}</td>
+            </tr>{% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}
