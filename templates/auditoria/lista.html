@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block title %}Historial de cambios{% endblock %}
+
+{% block content %}
+<p class="antetitulo">Administración</p>
+<div class="encabezado">
+    <div><h1>Historial de cambios</h1><p>Registro de lo que se hace en el sistema. Solo lectura.</p></div>
+</div>
+
+{% include 'componentes/controles.html' %}
+
+{% if page_obj.object_list %}
+<div class="tabla-scroll" tabindex="0" role="region" aria-label="Historial de cambios">
+    <table>
+        <caption>{{ paginator.count }} registro{{ paginator.count|pluralize:'s' }}</caption>
+        <thead><tr>
+            <th scope="col">Fecha y hora</th><th scope="col">Usuario</th><th scope="col">Acción</th>
+            <th scope="col">Sección</th><th scope="col">Registro</th><th scope="col">Detalle</th>
+        </tr></thead>
+        <tbody>
+            {% for r in page_obj %}<tr class="accion-{{ r.accion }}">
+                <td class="numero">{{ r.fecha_hora|date:"d/m/Y H:i:s" }}</td>
+                <td>{{ r.usuario_nombre|default:"—" }}</td>
+                <td>{{ r.get_accion_display }}</td>
+                <td>{{ r.modelo|default:"—" }}</td>
+                <td>{{ r.objeto|default:"—" }}</td>
+                <td>
+                    {% if r.detalle|length > 80 %}
+                    <details class="texto-largo">
+                        <summary>
+                            <span class="texto-corto">{{ r.detalle|truncatechars:80 }}</span>
+                            <span class="ver-mas">Ver más</span>
+                            <span class="ver-menos">Ver menos</span>
+                        </summary>
+                        <p>{{ r.detalle }}</p>
+                    </details>
+                    {% else %}{{ r.detalle|default:"—" }}{% endif %}
+                </td>
+            </tr>{% endfor %}
+        </tbody>
+    </table>
+</div>
+{% if ver_mas_querystring or hay_ver_menos %}
+<div class="paginacion" id="controles-historial">
+    {% if ver_mas_querystring %}<a class="boton secundario" id="ver-mas-registros" href="?{{ ver_mas_querystring }}">Ver más</a>{% endif %}
+    {% if hay_ver_menos %}<a class="boton secundario" id="ver-menos-registros" href="?{{ ver_menos_querystring }}">Ver menos</a>{% endif %}
+</div>
+<script>
+    (function () {
+        const controles = document.getElementById("controles-historial");
+        let cargando = false;
+        controles.addEventListener("click", async function (evento) {
+            const boton = evento.target.closest("a");
+            if (!boton) return;
+            evento.preventDefault();
+            if (cargando) return;
+            cargando = true;
+            const direccion = boton.href;
+            try {
+                const respuesta = await fetch(direccion);
+                const pagina = new DOMParser().parseFromString(await respuesta.text(), "text/html");
+                const filas = pagina.querySelector(".tabla-scroll tbody");
+                if (!respuesta.ok || !filas) throw new Error("Respuesta inesperada");
+                // Evita que el navegador mueva la vista para seguir a los botones cuando la tabla crece.
+                document.documentElement.style.overflowAnchor = "none";
+                document.querySelector(".tabla-scroll tbody").replaceWith(filas);
+                const nuevos = pagina.getElementById("controles-historial");
+                controles.innerHTML = nuevos ? nuevos.innerHTML : "";
+                history.replaceState(null, "", direccion);
+                const foco = document.getElementById(boton.id) || controles.querySelector("a");
+                if (foco) foco.focus({ preventScroll: true });
+                // Al achicar la tabla, los botones no deben quedar fuera de la pantalla.
+                if (boton.id === "ver-menos-registros") controles.scrollIntoView({ block: "nearest" });
+                cargando = false;
+            } catch (error) {
+                window.location.assign(direccion);
+            }
+        });
+    })();
+</script>
+{% endif %}
+{% else %}
+<div class="vacio"><h2>No hay registros para mostrar</h2><p>Probá con otros filtros.</p></div>
+{% endif %}
+{% endblock %}

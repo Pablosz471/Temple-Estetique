@@ -1,0 +1,23 @@
+{% extends "admin/change_form.html" %}
+
+{% block submit_buttons_bottom %}
+{{ block.super }}
+{% if original %}
+<div class="submit-row">
+    {% if original.abierta %}
+    <input type="submit" value="Registrar salida" name="_salida">
+    {% else %}
+        {% if puede_reabrir %}
+        <input type="submit" value="Reabrir asistencia" name="_reabrir">
+        {% endif %}
+        {% if original.activo %}
+            {% if puede_inhabilitar %}
+            <input type="submit" value="Inhabilitar" name="_inhabilitar">
+            {% endif %}
+        {% elif puede_habilitar %}
+        <input type="submit" value="Habilitar" name="_habilitar">
+        {% endif %}
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

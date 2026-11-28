@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Inicio
+{% endblock %}
+
+{% block content %}
+
+<p class="antetitulo">Temple Estetique · Tu espacio de trabajo</p>
+<div class="encabezado">
+<div>
+<h1>Hola, {{ user.first_name|default:user.username }}.</h1>
+<p>Resumen de tu actividad.</p>
+</div>
+</div>
+
+{% if empleado %}
+<div class="resumen">
+<div>
+<span>Servicio(s) realizado(s) hoy</span><strong>{{ servicios_hoy }}</strong>
+</div>
+<div>
+<span>Total generado hoy</span><strong>$ {{ total_hoy }}</strong>
+</div>
+<div>
+<span>Tu comisión de hoy ({{ porcentaje_comision }}%)</span><strong>$ {{ comision_hoy }}</strong>
+</div>
+</div>
+
+<section class="bloque">
+<div class="encabezado">
+<h2>Tu asistencia de hoy</h2>
+<a href="{% url 'asistencias:mis_asistencias' %}">Ver todas →</a>
+</div>
+<div class="lista-recientes">
+{% if asistencia_hoy %}
+<div class="fila">
+<span>
+<strong><span class="punto{% if not asistencia_hoy.abierta %} finalizado{% endif %}" aria-hidden="true"></span>{% if asistencia_hoy.abierta %}En curso{% else %}Jornada finalizada{% endif %}</strong>
+<small>Ingreso: {{ asistencia_hoy.fecha_hora_ingreso|date:'H:i' }}{% if not asistencia_hoy.abierta %} · Salida: {{ asistencia_hoy.fecha_hora_salida|date:'H:i' }}{% endif %}</small>
+</span>
+</div>
+{% else %}
+<p>Todavía no se registró tu asistencia de hoy.</p>
+{% endif %}
+</div>
+</section>
+
+<section class="bloque">
+<div class="encabezado">
+<h2>Tus servicios recientes</h2>
+<a href="{% url 'liquidaciones:mis_liquidaciones' %}">Ver todos →</a>
+</div>
+<div class="lista-recientes">
+{% for realizado in ultimos_realizados %}
+<div class="fila">
+<span>
+<strong>{{ realizado.servicio.nombre_servicio }}</strong>
+<small>{{ realizado.fecha_hora|date:'d/m/Y H:i' }}</small>
+</span>
+<span>$ {{ realizado.monto_servicio }}</span>
+</div>
+{% empty %}
+<div class="vacio">
+<h2>Todavía no tenés servicios registrados</h2>
+<p>Cuando se registre un servicio tuyo, aparecerá acá.</p>
+</div>
+{% endfor %}
+</div>
+</section>
+{% else %}
+<div class="vacio">
+<h2>Tu cuenta no tiene una ficha de empleado</h2>
+<p>Pedile al administrador que la revise.</p>
+</div>
+{% endif %}
+{% endblock %}

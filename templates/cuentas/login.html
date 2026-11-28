@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}
 Iniciar sesión
@@ -6,20 +7,22 @@ Iniciar sesión
 
 {% block content %}
 <div class="acceso">
-<section class="introduccion">
-<p class="antetitulo">Todo en un mismo lugar</p>
-<h1>Tu organización,<br> más cerca.</h1>
-<p>Consultá el catálogo y mantené la información al día desde tu espacio de trabajo.</p>
-<div class="nota">El acceso requiere una cuenta aprobada por el administrador.</div>
-</section>
-<section class="panel">
-<h2>Iniciar sesión</h2>
-<p>Ingresá con tu nombre de usuario y contraseña.</p>
-<form method="post">{% csrf_token %}{% include 'componentes/formulario.html' %}<input type="hidden" name="next" value="{{ next }}">
-<button class="ancho" type="submit">Ingresar al sistema</button>
-</form>
-<p class="pie-form">¿Es tu primera vez? <a href="{% url 'cuentas:registro' %}">Solicitá acceso</a>.</p>
-<p class="ayuda">Si olvidaste tu contraseña, contactá al administrador.</p>
-</section>
+    <section class="introduccion">
+        <p class="antetitulo">Belleza, bienestar y confianza</p>
+        <h1>Bienvenida a<br>Temple Estetique.</h1>
+        <p>Un espacio de trabajo para acompañar cada detalle del salón.</p>
+        <div class="nota">Las cuentas deben ser creadas por el administrador.</div>
+    </section>
+    <section class="panel">
+        <div class="auth-marca">
+            <img class="logo-acceso" src="{% static 'css/media/logo_temple.png' %}" alt="Temple Estetique" width="180" height="180">
+        </div>
+        <h2>Iniciar sesión</h2>
+        <p>Ingresá con tu nombre de usuario y contraseña.</p>
+        <form method="post">{% csrf_token %}{% include 'componentes/formulario.html' %}<input type="hidden" name="next" value="{{ next }}">
+            <button class="ancho" type="submit">Ingresar al sistema</button>
+        </form>
+        <p class="ayuda">Si olvidaste tu contraseña, contactá al administrador.</p>
+    </section>
 </div>
 {% endblock %}

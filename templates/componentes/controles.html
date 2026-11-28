@@ -1,0 +1,72 @@
+<form method="get" class="controles">
+    <div class="controles-barra">
+        <div class="campo controles-buscar">
+            <label for="buscar" class="solo-lector">Buscar</label>
+            <input id="buscar" name="q" value="{{ request.GET.q }}" maxlength="100" type="search" placeholder="Buscar...">
+        </div>
+        <button type="submit">Buscar</button>
+
+        {% if orden_opciones or filtros_ui or fecha_ui %}
+        <button type="button" class="secundario" id="alternar-filtros"
+                aria-expanded="false" aria-controls="panel-filtros"
+                data-activos="{{ filtros_activos }}">
+            Filtros{% if filtros_activos %}<span class="insignia">{{ filtros_activos }}</span>{% endif %}
+        </button>
+        {% endif %}
+
+        {% if hay_criterios %}<a href="{{ request.path }}">Limpiar</a>{% endif %}
+    </div>
+
+    {% if orden_opciones or filtros_ui or fecha_ui %}
+    <div class="controles-panel" id="panel-filtros">
+        {% if orden_opciones %}
+        <div class="campo">
+            <label for="orden">Ordenar por</label>
+            <select id="orden" name="orden">
+                {% for o in orden_opciones %}<option value="{{ o.clave }}"{% if o.activa %} selected{% endif %}>{{ o.etiqueta }}</option>{% endfor %}
+            </select>
+        </div>
+        {% endif %}
+
+        {% for f in filtros_ui %}
+        <div class="campo">
+            <label for="filtro-{{ f.param }}">{{ f.etiqueta }}</label>
+            <select id="filtro-{{ f.param }}" name="{{ f.param }}">
+                <option value="">Todos</option>
+                {% for o in f.opciones %}<option value="{{ o.valor }}"{% if o.activa %} selected{% endif %}>{{ o.etiqueta }}</option>{% endfor %}
+            </select>
+        </div>
+        {% endfor %}
+
+        {% if fecha_ui %}
+        <div class="campo">
+            <label for="desde">{{ fecha_ui.etiqueta }} desde</label>
+            <input id="desde" name="desde" type="date" value="{{ fecha_ui.desde }}">
+        </div>
+        <div class="campo">
+            <label for="hasta">{{ fecha_ui.etiqueta }} hasta</label>
+            <input id="hasta" name="hasta" type="date" value="{{ fecha_ui.hasta }}">
+        </div>
+        {% endif %}
+
+        <div class="acciones">
+            <a href="{{ request.path }}">Limpiar</a>
+            <button type="submit">Aplicar</button>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const boton = document.getElementById("alternar-filtros");
+            const panel = document.getElementById("panel-filtros");
+            if (!boton || !panel) return;
+            function mostrar(abierto) {
+                panel.hidden = !abierto;
+                boton.setAttribute("aria-expanded", abierto ? "true" : "false");
+            }
+            mostrar(boton.dataset.activos !== "0");
+            boton.addEventListener("click", function () { mostrar(panel.hidden); });
+        })();
+    </script>
+    {% endif %}
+</form>

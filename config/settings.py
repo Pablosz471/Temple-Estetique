@@ -30,14 +30,14 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "cuentas",
-    "catalogo",
     "inicio",
     "axes",
-    "empleados_app",
-    "asistencias_app",
-    "servicios_app",
-    "liquidaciones_app",
-    "aguinaldos_app",
+    #Aplicaciones del proyecto
+    "apps.empleados_app.apps.EmpleadosAppConfig",
+    "apps.asistencias_app.apps.AsistenciasAppConfig",
+    "apps.servicios_app.apps.ServiciosAppConfig",
+    "apps.liquidaciones_app.apps.LiquidacionesAppConfig",
+    "apps.auditoria_app.apps.AuditoriaAppConfig",
 ]
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -46,6 +46,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "apps.auditoria_app.middleware.UsuarioActualMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "axes.middleware.AxesMiddleware",
@@ -62,6 +63,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "inicio.context_processors.organizacion",
+                "inicio.context_processors.comision",
             ]
         },
     }

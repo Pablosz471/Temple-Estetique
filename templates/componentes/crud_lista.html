@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<p class="antetitulo">{% if solo_lectura %}Tu espacio de trabajo{% else %}Gestión del salón{% endif %}</p>
+<div class="encabezado">
+  <div><h1>{{ titulo }}</h1><p>{{ descripcion }}</p></div>
+  {% if crear_url %}<a class="boton" href="{{ crear_url }}">Nuevo registro</a>{% endif %}
+</div>
+
+{% block antes_de_tabla %}{% endblock %}
+{% include 'componentes/controles.html' %}
+
+{% if filas %}
+<div class="tabla-scroll" tabindex="0" role="region" aria-label="{{ titulo }}">
+  <table>
+    <caption>{{ paginator.count }} registro{{ paginator.count|pluralize:'s' }}</caption>
+    <thead><tr>{% for columna in columnas %}<th scope="col">{{ columna }}</th>{% endfor %}{% if not solo_lectura %}<th scope="col">Acciones</th>{% endif %}</tr></thead>
+
+    <tbody>
+{% for fila in filas %}<tr{% if fila.inhabilitada %} class="inhabilitado"{% endif %}>
+      {% for valor in fila.valores %}<td>
+        {% if valor|length > 50 %}
+        <details class="texto-largo">
+
+          <summary>
+            <span class="texto-corto">{{ valor|truncatechars:50 }}</span>
+            <span class="ver-mas">Ver más</span>
+            <span class="ver-menos">Ver menos</span>
+          </summary>
+
+          <p>{{ valor }}</p>
+        </details>
+        {% else %}{{ valor|default:"—" }}{% endif %}
+      </td>{% endfor %}
+      {% if not solo_lectura %}<td class="acciones-tabla"><a href="{{ fila.editar_url }}">Editar</a><a class="enlace-peligro" href="{{ fila.eliminar_url }}">{{ fila.baja_texto|default:"Eliminar" }}</a></td>{% endif %}
+    </tr>{% endfor %}
+    </tbody>
+
+  </table>
+</div>
+{% include 'componentes/paginacion.html' %}
+{% else %}
+<div class="vacio"><h2>No hay registros para mostrar</h2><p>{% if solo_lectura %}Cuando haya registros, aparecerán acá.{% if hay_criterios %} Probá con otros filtros.{% endif %}{% else %}Probá con otros filtros o agregá el primer registro.{% endif %}</p>{% if crear_url %}<a class="boton" href="{{ crear_url }}">Crear registro</a>{% endif %}</div>
+{% endif %}
+{% endblock %}

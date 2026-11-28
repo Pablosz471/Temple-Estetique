@@ -1,0 +1,16 @@
+{% extends "admin/change_form.html" %}
+
+{% block submit_buttons_bottom %}
+{{ block.super }}
+{% if original %}
+<div class="submit-row">
+    {% if original.activo %}
+        {% if puede_inhabilitar %}
+        <input type="submit" value="Inhabilitar" name="_inhabilitar">
+        {% endif %}
+    {% elif puede_habilitar %}
+    <input type="submit" value="Habilitar" name="_habilitar">
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,75 +1,84 @@
 {% load static %}
 <!doctype html>
 <html lang="es-AR">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>
-{% block title %}
-Inicio
-{% endblock %}
- · {{ organizacion_nombre }}</title>
-<link rel="stylesheet" href="{% static 'css/estilos.css' %}">
-</head>
-<body>
-<a class="skip" href="#contenido">Saltar al contenido</a>
-<header class="cabecera">
-<a class="marca" href="{% url 'inicio:home' %}">
-<span class="sello" aria-hidden="true">M</span>
-<span>{{ organizacion_nombre }}<small>Gestión de la organización</small>
-</span>
-</a>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>
+        {% block title %}
+        Inicio
+        {% endblock %}
+        · {{ organizacion_nombre }}</title>
+        <link rel="stylesheet" href="{% static 'css/estilos.css' %}?v=10">
+        <link rel="icon" type="image/png" href="{% static 'css/media/logo_temple.png' %}">
+    </head>
+    <body>
+        <a class="skip" href="#contenido">Saltar al contenido</a>
+        <header class="cabecera">
+            <a class="marca" href="{% url 'inicio:home' %}">
+                <img class="logo-cabecera" src="{% static 'css/media/logo_temple.png' %}" alt="" width="56" height="56">
+                <span>{{ organizacion_nombre }}<small>Belleza, bienestar y confianza</small>
+                </span>
+            </a>
 
-{% if user.is_authenticated %}
-<div class="sesion">
-<span>{{ user.get_full_name|default:user.username }}<small>
-{% if user.is_superuser %}
-Administrador
-{% else %}
-Operador
-{% endif %}
-</small>
-</span>
-<form method="post" action="{% url 'cuentas:logout' %}">{% csrf_token %}<button class="secundario" type="submit">Cerrar sesión</button>
-</form>
-</div>
-{% endif %}
-</header>
+            {% if user.is_authenticated %}
+            <div class="sesion">
+                <span>{{ user.get_full_name|default:user.username }}<small>
+                {% if user.is_superuser %}
+                Administrador
+                {% else %}
+                Empleado
+                {% endif %}
+                </small>
+                </span>
+                <form method="post" action="{% url 'cuentas:logout' %}">{% csrf_token %}<button class="secundario" type="submit">Cerrar sesión</button>
+                </form>
+            </div>
+            {% endif %}
+        </header>
 
-{% if user.is_authenticated %}
-<nav class="navegacion" aria-label="Principal">
-<a href="{% url 'inicio:home' %}"
-{% if request.resolver_match.app_name == 'inicio' %}
-aria-current="page"
-{% endif %}
->Inicio</a>
-<a href="{% url 'catalogo:lista' %}"
-{% if request.resolver_match.app_name == 'catalogo' %}
-aria-current="page"
-{% endif %}
->Catálogo</a>
+        {% if user.is_authenticated %}
+        <nav class="navegacion" aria-label="Principal">
+            <a href="{% url 'inicio:home' %}"
+            {% if request.resolver_match.app_name == 'inicio' %}
+            aria-current="page"
+            {% endif %}
+            >Inicio</a>
+            {% if user.is_superuser %}
+            {# Servicios y Servicios realizados comparten la app "operaciones": se distinguen por el nombre de la dirección. #}
+            <a href="{% url 'operaciones:servicios' %}"
+            {% if request.resolver_match.namespace == 'operaciones' and 'realizado' not in request.resolver_match.url_name %}aria-current="page"{% endif %}>Servicios</a>
+            <a href="{% url 'operaciones:realizados' %}"
+            {% if request.resolver_match.namespace == 'operaciones' and 'realizado' in request.resolver_match.url_name %}aria-current="page"{% endif %}>Servicios realizados</a>
+            <a href="{% url 'empleados:empleados' %}"
+            {% if request.resolver_match.namespace == 'empleados' %}aria-current="page"{% endif %}>Empleados</a>
+            <a href="{% url 'asistencias:lista' %}"
+            {% if request.resolver_match.namespace == 'asistencias' %}aria-current="page"{% endif %}>Asistencias</a>
+            <a href="{% url 'liquidaciones:lista' %}"
+            {% if request.resolver_match.namespace == 'liquidaciones' %}aria-current="page"{% endif %}>Liquidaciones</a>
+            <a href="{% url 'auditoria:lista' %}"
+            {% if request.resolver_match.namespace == 'auditoria' %}aria-current="page"{% endif %}>Historial</a>
+            {% elif user.empleado %}
+            <a href="{% url 'asistencias:mis_asistencias' %}"
+            {% if request.resolver_match.url_name == 'mis_asistencias' %}aria-current="page"{% endif %}>Mis asistencias</a>
+            <a href="{% url 'liquidaciones:mis_liquidaciones' %}"
+            {% if request.resolver_match.namespace == 'liquidaciones' %}aria-current="page"{% endif %}>Mis liquidaciones</a>
+            <a class="a-la-derecha" href="{% url 'cuentas:cambiar_password' %}"
+            {% if request.resolver_match.url_name == 'cambiar_password' %}aria-current="page"{% endif %}>Cambiar contraseña</a>
+            {% endif %}
+        </nav>
+        {% endif %}
 
-{% if user.is_superuser %}
-<a href="{% url 'cuentas:solicitudes' %}"
-{% if request.resolver_match.app_name == 'cuentas' %}
-aria-current="page"
-{% endif %}
->Solicitudes de acceso</a>
-<a href="{% url 'admin:index' %}">Administración</a>
-{% endif %}
-</nav>
-{% endif %}
+        <main id="contenido" tabindex="-1">
+            {% for message in messages %}
+            <div class="aviso {{ message.tags }}" role="status">{{ message }}</div>
+            {% endfor %}
 
-<main id="contenido" tabindex="-1">
-{% for message in messages %}
-<div class="aviso" role="status">{{ message }}</div>
-{% endfor %}
+            {% block content %}
 
-{% block content %}
-
-{% endblock %}
-</main>
-<footer>Práctica Profesional II <span>Instituto Superior del Milagro · Plantilla de aprendizaje</span>
-</footer>
-</body>
+            {% endblock %}
+        </main>
+        <footer>{{ organizacion_nombre }} <span>Belleza, bienestar y confianza</span>
+        </footer>
+    </body>
 </html>

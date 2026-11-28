@@ -1,0 +1,46 @@
+{% extends 'componentes/crud_lista.html' %}
+
+{% block antes_de_tabla %}
+<form method="post" action="{% url 'asistencias:marcar' %}" class="panel">{% csrf_token %}
+    <div class="campo">
+        <label for="id_empleado">Empleado</label>
+        <select name="empleado" id="id_empleado" required>
+        <option value="">Elegí un empleado</option>
+        {% for item in empleados %}
+        <option value="{{ item.empleado.pk }}" data-estado="{{ item.estado }}">{{ item.empleado }}</option>
+        {% endfor %}
+        </select>
+        <div class="ayuda" id="estado-empleado" aria-live="polite"></div>
+    </div>
+    <div class="acciones">
+        <button type="submit" name="accion" value="ingreso" id="boton-ingreso" disabled>Registrar asistencia</button>
+        <button type="submit" name="accion" value="salida" id="boton-salida" class="secundario" disabled>Registrar salida</button>
+        <button type="submit" name="accion" value="reabrir" id="boton-reabrir" class="secundario" disabled>Reabrir asistencia</button>
+    </div>
+</form>
+
+<script>
+    (function () {
+    const select = document.getElementById("id_empleado");
+    const ingreso = document.getElementById("boton-ingreso");
+    const salida = document.getElementById("boton-salida");
+    const reabrir = document.getElementById("boton-reabrir");
+    const ayuda = document.getElementById("estado-empleado");
+    const textos = {
+        sin: "Todavía no registró asistencia hoy.",
+        abierta: "Asistencia en curso.",
+        cerrada: "Ya registró ingreso y salida hoy. Podés reabrir su asistencia.",
+    };
+    function actualizar() {
+        const opcion = select.options[select.selectedIndex];
+        const estado = opcion ? opcion.dataset.estado : "";
+        ingreso.disabled = estado !== "sin";
+        salida.disabled = estado !== "abierta";
+        ayuda.textContent = textos[estado] || "";
+        reabrir.disabled = estado !== "cerrada";
+    }
+    select.addEventListener("change", actualizar);
+    actualizar();
+    })();
+</script>
+{% endblock %}
