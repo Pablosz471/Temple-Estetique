@@ -1,4 +1,5 @@
 from django.urls import reverse
+from apps.auditoria_app.models import RegistroCambio
 from apps.pruebas import CLAVE, PruebaBase
 from .models import Empleado, Rol
 
@@ -50,3 +51,58 @@ class EmpleadosTests(PruebaBase):
         self.assertContains(respuesta, "Nuevo registro")
         self.assertContains(respuesta, "Editar")
         self.assertContains(respuesta, "Inhabilitar")
+
+
+class RestablecerPasswordTests(PruebaBase):
+    NUEVA = "Otra-clave-segura-678"
+
+    def setUp(self):
+        self.admin = self.crear_empleado("jefa", "20111222", admin=True)
+        self.ana = self.crear_empleado("ana", "30111222")
+        self.client.force_login(self.admin.usuario)
+        self.url = reverse("empleados:restablecer_password", args=[self.ana.pk])
+
+    def enviar(self, clave1, clave2=None, url=None):
+        return self.client.post(
+            url or self.url,
+            {"password1": clave1, "password2": clave1 if clave2 is None else clave2},
+            follow=True,
+        )
+
+    def test_el_boton_esta_en_editar_empleado(self):
+        respuesta = self.client.get(reverse("empleados:empleado_editar", args=[self.ana.pk]))
+        self.assertContains(respuesta, self.url)
+        self.assertContains(self.client.get(self.url), "¿Está seguro que desea restablecer")
+
+    def test_restablece_y_queda_en_el_historial(self):
+        respuesta = self.enviar(self.NUEVA)
+        self.assertContains(respuesta, "restablecida")
+        self.ana.usuario.refresh_from_db()
+        self.assertTrue(self.ana.usuario.check_password(self.NUEVA))
+        registro = RegistroCambio.objects.get(detalle="Contraseña restablecida.")
+        self.assertEqual(registro.usuario_nombre, "jefa")
+
+    def test_mismas_validaciones_que_en_el_alta(self):
+        for clave1, clave2 in (
+            ("corta1", "corta1"),
+            ("1234567890123", "1234567890123"),
+            ("password123", "password123"),
+            ("ana@example.test", "ana@example.test"),
+            (self.NUEVA, "distinta-clave-999"),
+            ("", ""),
+        ):
+            with self.subTest(clave=clave1):
+                respuesta = self.enviar(clave1, clave2)
+                self.assertTrue(respuesta.context["form"].errors)
+        self.ana.usuario.refresh_from_db()
+        self.assertTrue(self.ana.usuario.check_password(CLAVE))
+
+    def test_solo_el_administrador(self):
+        self.client.force_login(self.ana.usuario)
+        self.assertEqual(self.client.get(self.url).status_code, 403)
+        self.assertEqual(self.enviar(self.NUEVA).status_code, 403)
+
+    def test_restablecer_la_propia_no_cierra_la_sesion(self):
+        url = reverse("empleados:restablecer_password", args=[self.admin.pk])
+        respuesta = self.enviar(self.NUEVA, url=url)
+        self.assertTrue(respuesta.context["user"].is_authenticated)

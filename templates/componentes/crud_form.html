@@ -10,7 +10,7 @@
   <p>Completá los datos y guardá los cambios.</p>
   <form method="post" class="panel">{% csrf_token %}
     {% include 'componentes/formulario.html' %}
-    <div class="acciones"><button type="submit">Guardar</button><a href="{{ lista_url }}">Cancelar</a></div>
+    <div class="acciones"><button type="submit">Guardar</button><a href="{{ lista_url }}">Cancelar</a>{% block acciones_extra %}{% endblock %}</div>
   </form>
 </div>
 {% endblock %}

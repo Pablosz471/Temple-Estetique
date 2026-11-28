@@ -1,0 +1,5 @@
+{% extends 'componentes/crud_form.html' %}
+
+{% block acciones_extra %}
+<a class="boton secundario a-la-derecha" href="{% url 'empleados:restablecer_password' object.pk %}">Restablecer contraseña</a>
+{% endblock %}

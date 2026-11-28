@@ -22,17 +22,30 @@ class EmpleadoBaseForm(forms.ModelForm):
         self.fields["rol"].empty_label = None
 
 
+def _campo_clave(etiqueta):
+    return forms.CharField(
+        label=etiqueta,
+        widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}),
+    )
+
+
+def _validar_claves(form, datos, usuario):
+    """Las dos contraseñas coinciden y cumplen las reglas del sistema."""
+    clave1, clave2 = datos.get("password1"), datos.get("password2")
+    if clave1 and clave2 and clave1 != clave2:
+        form.add_error("password2", "Las contraseñas no coinciden.")
+    elif clave1:
+        try:
+            validate_password(clave1, usuario)
+        except forms.ValidationError as error:
+            form.add_error("password1", error)
+
+
 class EmpleadoCrearForm(EmpleadoBaseForm):
     username = forms.CharField(label="Nombre de usuario", max_length=150)
     email = forms.EmailField(label="Correo electrónico")
-    password1 = forms.CharField(
-        label="Contraseña",
-        widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}),
-    )
-    password2 = forms.CharField(
-        label="Repetir contraseña",
-        widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}),
-    )
+    password1 = _campo_clave("Contraseña")
+    password2 = _campo_clave("Repetir contraseña")
 
     field_order = [
         "username", "nombre", "apellido", "dni", "telefono",
@@ -53,20 +66,13 @@ class EmpleadoCrearForm(EmpleadoBaseForm):
 
     def clean(self):
         datos = super().clean()
-        clave1, clave2 = datos.get("password1"), datos.get("password2")
-        if clave1 and clave2 and clave1 != clave2:
-            self.add_error("password2", "Las contraseñas no coinciden.")
-        elif clave1:
-            provisorio = Usuario(
-                username=datos.get("username", ""),
-                email=datos.get("email", ""),
-                first_name=datos.get("nombre", ""),
-                last_name=datos.get("apellido", ""),
-            )
-            try:
-                validate_password(clave1, provisorio)
-            except forms.ValidationError as error:
-                self.add_error("password1", error)
+        provisorio = Usuario(
+            username=datos.get("username", ""),
+            email=datos.get("email", ""),
+            first_name=datos.get("nombre", ""),
+            last_name=datos.get("apellido", ""),
+        )
+        _validar_claves(self, datos, provisorio)
         return datos
 
     @transaction.atomic
@@ -87,6 +93,25 @@ class EmpleadoCrearForm(EmpleadoBaseForm):
         empleado.usuario = usuario
         empleado.save()
         return empleado
+
+
+class RestablecerPasswordForm(forms.Form):
+    password1 = _campo_clave("Nueva contraseña")
+    password2 = _campo_clave("Repetir nueva contraseña")
+
+    def __init__(self, *args, usuario, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.usuario = usuario
+
+    def clean(self):
+        datos = super().clean()
+        _validar_claves(self, datos, self.usuario)
+        return datos
+
+    def save(self):
+        self.usuario.set_password(self.cleaned_data["password1"])
+        self.usuario.save(update_fields=["password"])
+        return self.usuario
 
 
 class EmpleadoEditarForm(EmpleadoBaseForm):

@@ -340,8 +340,22 @@ textarea {
 .bloque p {
   margin-bottom:0;
 }
-.navegacion .a-la-derecha {
+.navegacion .a-la-derecha,.acciones .a-la-derecha {
   margin-left:auto;
+}
+.modal {
+  max-width:440px;
+  padding:28px;
+  background:var(--fondo);
+  color:var(--texto);
+  border:1px solid var(--borde);
+  border-radius:var(--radio);
+}
+.modal::backdrop {
+  background:#0007;
+}
+.modal h2 {
+  margin-top:0;
 }
 .punto {
   display:inline-block;
