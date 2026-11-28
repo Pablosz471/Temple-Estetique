@@ -27,7 +27,7 @@ class LiquidacionesView(AdminMixin, TemplateView):
         return ctx
 
 
-def _meses_de(empleado, mes_elegido):
+def _meses_de(empleado, mes_elegido, incluir_inhabilitados=False):
     hoy = timezone.localdate()
     # El mes en curso aparece siempre y con los números al día.
     RegistroMensual.actualizar(empleado.pk, hoy.year, hoy.month)
@@ -36,13 +36,16 @@ def _meses_de(empleado, mes_elegido):
     if mes_elegido not in dict(meses):
         mes_elegido = ""
     registros = [r for r in todos if not mes_elegido or r.clave == mes_elegido]
-    RegistroMensual.cargar_resumenes(empleado, registros)
+    RegistroMensual.cargar_resumenes(
+        empleado, registros, incluir_inhabilitados=incluir_inhabilitados
+    )
     return {"empleado": empleado, "registros": registros, "meses": meses, "mes_elegido": mes_elegido}
 
 
 class _ServiciosDelMes(ListView):
     template_name = "liquidaciones/servicios.html"
     paginate_by = 20
+    incluir_inhabilitados = False
 
     def buscar_registro(self):
         return get_object_or_404(RegistroMensual, pk=self.kwargs["pk"])
@@ -50,7 +53,7 @@ class _ServiciosDelMes(ListView):
     def get_queryset(self):
         registro = self.buscar_registro()
         self.registro = RegistroMensual.actualizar(registro.empleado_id, registro.anio, registro.mes)
-        return self.registro.servicios()
+        return self.registro.servicios(self.incluir_inhabilitados)
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -78,7 +81,7 @@ class _ListadoServiciosDelMes(ListadoMixin, _ServiciosDelMes):
         )
 
     def _opciones_de_servicio(self):
-        realizados = self.registro.servicios().values("servicio")
+        realizados = self.registro.servicios(self.incluir_inhabilitados).values("servicio")
         return [(str(s.pk), s.nombre_servicio, s.pk) for s in Servicio.objects.filter(pk__in=realizados)]
 
 
@@ -91,12 +94,20 @@ class MisLiquidacionesView(EmpleadoSoloLecturaMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx.update(_meses_de(self.request.user.empleado, self.request.GET.get("mes", "")))
+        ctx.update(
+            _meses_de(
+                self.request.user.empleado,
+                self.request.GET.get("mes", ""),
+                incluir_inhabilitados=True,
+            )
+        )
         ctx["solo_lectura"] = True
         return ctx
 
 
 class MisServiciosDelMesView(EmpleadoSoloLecturaMixin, _ListadoServiciosDelMes):
+    incluir_inhabilitados = True
+
     def buscar_registro(self):
         return get_object_or_404(
             RegistroMensual, pk=self.kwargs["pk"], empleado=self.request.user.empleado

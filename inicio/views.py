@@ -43,10 +43,12 @@ def _home_empleado(request, hoy):
             servicios_hoy=de_hoy.count(),
             total_hoy=total.quantize(Decimal("0.01")),
             comision_hoy=RegistroAsistencia.comision_de(total),
-            asistencia_hoy=empleado.asistencias.filter(
-                activo=True, fecha_hora_ingreso__date=hoy
-            ).first(),
-            ultimos_realizados=realizados.select_related("servicio")[:5],
+            # Si hay una habilitada y otra inhabilitada, se muestra la habilitada.
+            asistencia_hoy=empleado.asistencias.filter(fecha_hora_ingreso__date=hoy)
+            .order_by("-activo", "-fecha_hora_ingreso")
+            .first(),
+            ultimos_realizados=ServicioRealizado.objects.filter(empleado=empleado)
+            .select_related("servicio")[:5],
         )
     return render(request, "inicio/home_empleado.html", contexto)
 

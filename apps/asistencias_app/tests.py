@@ -113,7 +113,7 @@ class AsistenciasTests(PruebaBase):
         self.assertContains(respuesta, "Inhabilitar")
         self.assertNotContains(respuesta, "Nuevo registro")
 
-    def test_el_empleado_ve_solo_sus_asistencias_habilitadas(self):
+    def test_el_empleado_ve_solo_sus_asistencias_incluidas_las_inhabilitadas(self):
         bea = self.crear_empleado("bea", "31111222")
         ahora = timezone.now()
         for empleado, detalle, dias, activo in (
@@ -129,6 +129,7 @@ class AsistenciasTests(PruebaBase):
         self.client.force_login(self.ana.usuario)
         respuesta = self.client.get(reverse("asistencias:mis_asistencias"), {"empleado": bea.pk})
         self.assertContains(respuesta, "PROPIA")
-        self.assertNotContains(respuesta, "ANULADA")
+        self.assertContains(respuesta, "ANULADA")
+        self.assertContains(respuesta, 'class="inhabilitado"')
         self.assertNotContains(respuesta, "AJENA")
         self.assertNotContains(respuesta, "Acciones")

@@ -1,6 +1,6 @@
 from decimal import Decimal
 from django.db import models
-from django.db.models import Count, F, Sum, Window
+from django.db.models import Case, F, Sum, When, Window
 from django.db.models.functions import RowNumber, TruncMonth
 from django.utils import timezone
 
@@ -72,22 +72,27 @@ class RegistroMensual(models.Model):
         hoy = timezone.localdate()
         return (self.anio, self.mes) == (hoy.year, hoy.month)
 
-    def servicios(self):
+    def servicios(self, incluir_inhabilitados=False):
         from apps.servicios_app.models import ServicioRealizado
 
-        return ServicioRealizado.objects.filter(
-            activo=True,
+        servicios = ServicioRealizado.objects.filter(
             empleado_id=self.empleado_id,
             fecha_hora__year=self.anio,
             fecha_hora__month=self.mes,
         ).select_related("servicio")
+        return servicios if incluir_inhabilitados else servicios.filter(activo=True)
 
     @staticmethod
-    def cargar_resumenes(empleado, registros, cantidad_ultimos=5):
-        """Agrega a cada registro `ultimos` y `cantidad` con una sola consulta."""
+    def cargar_resumenes(empleado, registros, cantidad_ultimos=5, incluir_inhabilitados=False):
+        """Agrega a cada registro `ultimos` y `cantidad` con una sola consulta.
+
+        `cantidad` cuenta solo los habilitados, aunque `ultimos` incluya los demás.
+        """
         from apps.servicios_app.models import ServicioRealizado
 
-        servicios = ServicioRealizado.objects.filter(activo=True, empleado=empleado)
+        servicios = ServicioRealizado.objects.filter(empleado=empleado)
+        if not incluir_inhabilitados:
+            servicios = servicios.filter(activo=True)
         if len(registros) == 1:
             servicios = servicios.filter(
                 fecha_hora__year=registros[0].anio, fecha_hora__month=registros[0].mes
@@ -100,7 +105,9 @@ class RegistroMensual(models.Model):
                     partition_by=mes,
                     order_by=[F("fecha_hora").desc(), F("pk").desc()],
                 ),
-                cantidad_del_mes=Window(Count("pk"), partition_by=mes),
+                cantidad_del_mes=Window(
+                    Sum(Case(When(activo=True, then=1), default=0)), partition_by=mes
+                ),
             )
             .filter(posicion__lte=cantidad_ultimos)
             .select_related("servicio")

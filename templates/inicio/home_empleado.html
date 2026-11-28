@@ -34,9 +34,9 @@ Inicio
 </div>
 <div class="lista-recientes">
 {% if asistencia_hoy %}
-<div class="fila">
+<div class="fila{% if not asistencia_hoy.activo %} inhabilitado{% endif %}">
 <span>
-<strong><span class="punto{% if not asistencia_hoy.abierta %} finalizado{% endif %}" aria-hidden="true"></span>{% if asistencia_hoy.abierta %}En curso{% else %}Jornada finalizada{% endif %}</strong>
+<strong><span class="punto{% if not asistencia_hoy.abierta %} finalizado{% endif %}" aria-hidden="true"></span>{% if not asistencia_hoy.activo %}Asistencia inhabilitada{% elif asistencia_hoy.abierta %}En curso{% else %}Jornada finalizada{% endif %}</strong>
 <small>Ingreso: {{ asistencia_hoy.fecha_hora_ingreso|date:'H:i' }}{% if not asistencia_hoy.abierta %} · Salida: {{ asistencia_hoy.fecha_hora_salida|date:'H:i' }}{% endif %}</small>
 </span>
 </div>
@@ -53,10 +53,10 @@ Inicio
 </div>
 <div class="lista-recientes">
 {% for realizado in ultimos_realizados %}
-<div class="fila">
+<div class="fila{% if not realizado.activo %} inhabilitado{% endif %}">
 <span>
 <strong>{{ realizado.servicio.nombre_servicio }}</strong>
-<small>{{ realizado.fecha_hora|date:'d/m/Y H:i' }}</small>
+<small>{{ realizado.fecha_hora|date:'d/m/Y H:i' }}{% if not realizado.activo %} · Inhabilitado{% endif %}</small>
 </span>
 <span>$ {{ realizado.monto_servicio }}</span>
 </div>

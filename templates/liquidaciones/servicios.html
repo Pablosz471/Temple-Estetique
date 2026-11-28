@@ -17,17 +17,19 @@
 <div class="tabla-scroll" tabindex="0" role="region" aria-label="Servicios del mes">
   <table>
     <caption>{{ paginator.count }} servicio{{ paginator.count|pluralize }}</caption>
-    <thead><tr><th scope="col">Fecha y hora</th><th scope="col">Servicio</th><th scope="col">Monto</th><th scope="col">Comisión ({{ porcentaje_comision }}%)</th>{% if not solo_lectura %}<th scope="col">Observación</th>{% endif %}</tr></thead>
+    <thead><tr><th scope="col">Fecha y hora</th><th scope="col">Servicio</th><th scope="col">Monto</th><th scope="col">Comisión ({{ porcentaje_comision }}%)</th>{% if solo_lectura %}<th scope="col">Estado</th>{% else %}<th scope="col">Observación</th>{% endif %}</tr></thead>
     <tbody>
 
     {% for realizado in page_obj %}
 
-    <tr>
+    <tr{% if not realizado.activo %} class="inhabilitado"{% endif %}>
       <td>{{ realizado.fecha_hora|date:'d/m/Y H:i' }}</td>
       <td>{{ realizado.servicio.nombre_servicio }}</td>
       <td>$ {{ realizado.monto_servicio }}</td>
-      <td>$ {{ realizado.comision }}</td>
-      {% if not solo_lectura %}
+      <td>{% if realizado.activo %}$ {{ realizado.comision }}{% else %}—{% endif %}</td>
+      {% if solo_lectura %}
+      <td>{% if realizado.activo %}Activo{% else %}Inhabilitado{% endif %}</td>
+      {% else %}
       <td>
         {% if realizado.observacion|length > 50 %}
         <details class="texto-largo">
@@ -44,7 +46,7 @@
     </tr>
     
     {% empty %}
-    <tr><td colspan="{% if solo_lectura %}4{% else %}5{% endif %}">{% if hay_criterios %}No hay servicios que coincidan con la búsqueda.{% else %}No hay servicios realizados en este mes.{% endif %}</td></tr>
+    <tr><td colspan="5">{% if hay_criterios %}No hay servicios que coincidan con la búsqueda.{% else %}No hay servicios realizados en este mes.{% endif %}</td></tr>
     {% endfor %}
 
     </tbody>

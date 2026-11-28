@@ -109,7 +109,7 @@ class MisAsistenciasListView(EmpleadoSoloLecturaMixin, ListadoMixin, ListView):
     model = RegistroAsistencia
     template_name = "componentes/crud_lista.html"
     paginate_by = 20
-    columnas = ("Ingreso", "Salida", "Comisión diaria", "Detalle")
+    columnas = ("Ingreso", "Salida", "Comisión diaria", "Detalle", "Estado")
     busqueda = ("detalle",)
     ordenes = (
         ("-fecha", "Fecha (más reciente)", ("-fecha_hora_ingreso",)),
@@ -123,6 +123,10 @@ class MisAsistenciasListView(EmpleadoSoloLecturaMixin, ListadoMixin, ListView):
             "param": "situacion", "etiqueta": "Situación", "campo": "fecha_hora_salida__isnull",
             "opciones": [("encurso", "En curso", True), ("cerrada", "Cerrada", False)],
         },
+        {
+            "param": "registro", "etiqueta": "Registro", "campo": "activo",
+            "opciones": [("activa", "Activa", True), ("inhabilitada", "Inhabilitada", False)],
+        },
     )
 
     def get(self, request, *args, **kwargs):
@@ -130,7 +134,7 @@ class MisAsistenciasListView(EmpleadoSoloLecturaMixin, ListadoMixin, ListView):
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
-        return super().get_queryset().filter(activo=True, empleado=self.request.user.empleado)
+        return super().get_queryset().filter(empleado=self.request.user.empleado)
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -140,7 +144,13 @@ class MisAsistenciasListView(EmpleadoSoloLecturaMixin, ListadoMixin, ListView):
             columnas=self.columnas,
             solo_lectura=True,
         )
-        ctx["filas"] = [{"valores": _datos_de_jornada(o)} for o in ctx["object_list"]]
+        ctx["filas"] = [
+            {
+                "valores": (*_datos_de_jornada(o), "Activa" if o.activo else "Inhabilitada"),
+                "inhabilitada": not o.activo,
+            }
+            for o in ctx["object_list"]
+        ]
         return ctx
 
 

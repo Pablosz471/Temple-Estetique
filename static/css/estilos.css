@@ -560,6 +560,10 @@ tr.inhabilitado td {
 tr.inhabilitado .enlace-peligro {
   color:#9C3224;
 }
+.lista-recientes .inhabilitado {
+  background:#ffa08323;
+  color:#6B3F2E;
+}
 
 /* historial de cambios */
 tr.accion-creacion td {

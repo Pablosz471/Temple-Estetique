@@ -66,7 +66,8 @@ class InicioTests(PruebaBase):
         self.client.force_login(self.ana.usuario)
         respuesta = self.client.get(reverse("inicio:home"))
         self.assertContains(respuesta, "PROPIO")
-        self.assertNotContains(respuesta, "ANULADO")
+        self.assertContains(respuesta, "ANULADO")
+        self.assertContains(respuesta, "Inhabilitado")
         self.assertNotContains(respuesta, "AJENO")
         self.assertEqual(respuesta.context["servicios_hoy"], 1)
         self.assertEqual(str(respuesta.context["comision_hoy"]), "400.00")
@@ -84,10 +85,25 @@ class InicioTests(PruebaBase):
         respuesta = self.client.get(url, {"servicio": self.ajeno.servicio_id})
         self.assertContains(respuesta, "PROPIO")
         self.assertNotContains(respuesta, "AJENO")
-        self.assertNotContains(respuesta, "ANULADO")
+        self.assertContains(respuesta, "ANULADO")
+        self.assertContains(respuesta, "<td>Inhabilitado</td>")
         self.assertNotContains(respuesta, "NOTA")
         otro = reverse("liquidaciones:mis_servicios_del_mes", args=[ajeno.pk])
         self.assertEqual(self.client.get(otro).status_code, 404)
+
+    def test_los_inhabilitados_se_ven_pero_no_suman(self):
+        self.client.force_login(self.ana.usuario)
+        respuesta = self.client.get(reverse("liquidaciones:mis_liquidaciones"))
+        registro = respuesta.context["registros"][0]
+        self.assertContains(respuesta, "ANULADO")
+        self.assertEqual(len(registro.ultimos), 2)
+        self.assertEqual(registro.cantidad, 1)
+        self.assertEqual(str(registro.total_generado), "1000.00")
+
+        jefa = self.crear_empleado("jefa", "20111222", admin=True)
+        self.client.force_login(jefa.usuario)
+        url = reverse("liquidaciones:servicios", args=[registro.pk])
+        self.assertNotContains(self.client.get(url), "ANULADO")
 
     def test_el_detalle_del_mes_muestra_la_comision_de_cada_servicio(self):
         registro = RegistroMensual.objects.get(empleado=self.ana)
