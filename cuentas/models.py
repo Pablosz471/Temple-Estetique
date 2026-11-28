@@ -30,6 +30,24 @@ class Usuario(AbstractUser):
     )
     objects = AdministradorUsuarios()
 
+    @property
+    def es_administrador(self):
+        """Accede a la sección de administración: superusuario o empleado con ese rol."""
+        if self.is_superuser:
+            return True
+        empleado = getattr(self, "empleado", None)
+        return empleado is not None and empleado.activo and empleado.rol.es_administrador
+
+    def puede_gestionar(self, empleado):
+        """Solo el superusuario puede modificar administradores y superusuarios."""
+        if self.is_superuser:
+            return True
+        return (
+            self.es_administrador
+            and not empleado.rol.es_administrador
+            and not empleado.usuario.is_superuser
+        )
+
     class Meta:
         constraints = [
             models.UniqueConstraint(

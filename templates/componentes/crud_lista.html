@@ -34,7 +34,7 @@
         </details>
         {% else %}{{ valor|default:"—" }}{% endif %}
       </td>{% endfor %}
-      {% if not solo_lectura %}<td class="acciones-tabla"><a href="{{ fila.editar_url }}">Editar</a><a class="enlace-peligro" href="{{ fila.eliminar_url }}">{{ fila.baja_texto|default:"Eliminar" }}</a></td>{% endif %}
+      {% if not solo_lectura %}<td class="acciones-tabla">{% if fila.editar_url %}<a href="{{ fila.editar_url }}">Editar</a><a class="enlace-peligro" href="{{ fila.eliminar_url }}">{{ fila.baja_texto|default:"Eliminar" }}</a>{% else %}Solo superusuario{% endif %}</td>{% endif %}
     </tr>{% endfor %}
     </tbody>
 

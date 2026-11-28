@@ -16,7 +16,7 @@ def home(request):
 
     cerrar_vencidas()
     hoy = timezone.localdate()
-    if not request.user.is_superuser:
+    if not request.user.es_administrador:
         return _home_empleado(request, hoy)
     return render(
         request,

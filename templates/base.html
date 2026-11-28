@@ -25,6 +25,8 @@
             <div class="sesion">
                 <span>{{ user.get_full_name|default:user.username }}<small>
                 {% if user.is_superuser %}
+                Superusuario
+                {% elif user.es_administrador %}
                 Administrador
                 {% else %}
                 Empleado
@@ -44,7 +46,7 @@
             aria-current="page"
             {% endif %}
             >Inicio</a>
-            {% if user.is_superuser %}
+            {% if user.es_administrador %}
             {# Servicios y Servicios realizados comparten la app "operaciones": se distinguen por el nombre de la dirección. #}
             <a href="{% url 'operaciones:servicios' %}"
             {% if request.resolver_match.namespace == 'operaciones' and 'realizado' not in request.resolver_match.url_name %}aria-current="page"{% endif %}>Servicios</a>
@@ -60,6 +62,8 @@
             {% if request.resolver_match.namespace == 'auditoria' %}aria-current="page"{% endif %}>Historial</a>
             <a href="{% url 'respaldos:lista' %}"
             {% if request.resolver_match.namespace == 'respaldos' %}aria-current="page"{% endif %}>Backups</a>
+            <a href="{% url 'cuentas:cambiar_password' %}"
+            {% if request.resolver_match.url_name == 'cambiar_password' %}aria-current="page"{% endif %}>Cambiar contraseña</a>
             {% elif user.empleado %}
             <a href="{% url 'asistencias:mis_asistencias' %}"
             {% if request.resolver_match.url_name == 'mis_asistencias' %}aria-current="page"{% endif %}>Mis asistencias</a>

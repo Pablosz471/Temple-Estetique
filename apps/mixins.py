@@ -8,7 +8,7 @@ from apps.listados import ListadoMixin
 
 class AdminMixin(LoginRequiredMixin, UserPassesTestMixin):
     def test_func(self):
-        return self.request.user.is_superuser
+        return self.request.user.es_administrador
 
 
 class EmpleadoSoloLecturaMixin(LoginRequiredMixin, UserPassesTestMixin):
@@ -18,7 +18,7 @@ class EmpleadoSoloLecturaMixin(LoginRequiredMixin, UserPassesTestMixin):
 
     def test_func(self):
         usuario = self.request.user
-        return not usuario.is_superuser and getattr(usuario, "empleado", None) is not None
+        return not usuario.es_administrador and getattr(usuario, "empleado", None) is not None
 
 
 class TablaAdminMixin(AdminMixin, ListadoMixin, ListView):

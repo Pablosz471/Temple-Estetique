@@ -23,7 +23,6 @@ class PruebaBase(TestCase):
         usuario = Usuario.objects.create_user(
             nombre, f"{nombre}@example.test", CLAVE,
             is_active=True, estado=Usuario.Estado.APROBADO,
-            is_superuser=admin, is_staff=admin,
         )
         rol = Rol.objects.get(nombre_rol=Rol.ADMINISTRADOR if admin else Rol.EMPLEADO)
         return Empleado.objects.create(

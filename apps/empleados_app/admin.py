@@ -29,18 +29,15 @@ class EmpleadoAdmin(admin.ModelAdmin):
         return ["usuario_asociado", "nombre", "apellido", "dni", "telefono", "email", "rol", "activo", "direccion"]
 
     def get_form(self, request, obj=None, **kwargs):
-        if obj is None:
-            kwargs["form"] = EmpleadoCrearForm
-            return super().get_form(request, obj, **kwargs)
-        kwargs["form"] = EmpleadoEditarForm
+        kwargs["form"] = EmpleadoCrearForm if obj is None else EmpleadoEditarForm
         Form = super().get_form(request, obj, **kwargs)
         usuario = request.user
 
-        class FormEdicion(Form):
+        class FormConUsuario(Form):
             def __init__(self, *args, **kw):
                 super().__init__(*args, usuario_actual=usuario, **kw)
 
-        return FormEdicion
+        return FormConUsuario
 
     @admin.display(description="Usuario")
     def usuario_asociado(self, obj):

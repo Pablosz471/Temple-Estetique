@@ -157,7 +157,7 @@ class MisAsistenciasListView(EmpleadoSoloLecturaMixin, ListadoMixin, ListView):
 @login_required
 @require_POST
 def marcar(request):
-    if not request.user.is_superuser:
+    if not request.user.es_administrador:
         raise PermissionDenied
     form = MarcarAsistenciaForm(request.POST)
     if not form.is_valid():

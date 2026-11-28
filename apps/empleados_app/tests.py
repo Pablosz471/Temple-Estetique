@@ -1,6 +1,7 @@
 from django.urls import reverse
 from apps.auditoria_app.models import RegistroCambio
 from apps.pruebas import CLAVE, PruebaBase
+from cuentas.models import Usuario
 from .models import Empleado, Rol
 
 
@@ -25,9 +26,12 @@ class EmpleadosTests(PruebaBase):
         self.assertFalse(usuario.is_superuser)
         self.assertTrue(usuario.check_password(CLAVE))
 
-    def test_el_rol_administrador_da_permisos(self):
-        self.client.post(reverse("empleados:empleado_crear"), self.datos_alta(Rol.ADMINISTRADOR))
-        self.assertTrue(Empleado.objects.get(dni="33111222").usuario.is_superuser)
+    def test_un_administrador_no_puede_crear_administradores(self):
+        respuesta = self.client.post(
+            reverse("empleados:empleado_crear"), self.datos_alta(Rol.ADMINISTRADOR)
+        )
+        self.assertIn("rol", respuesta.context["form"].errors)
+        self.assertFalse(Empleado.objects.filter(dni="33111222").exists())
 
     def test_inhabilitar_quita_el_acceso_y_habilitar_lo_devuelve(self):
         ana = self.crear_empleado("ana", "30111222")
@@ -45,6 +49,7 @@ class EmpleadosTests(PruebaBase):
         self.assertTrue(self.admin.activo)
 
     def test_la_lista_muestra_columnas_y_acciones(self):
+        self.crear_empleado("ana", "30111222")
         respuesta = self.client.get(reverse("empleados:empleados"))
         fila = respuesta.context["filas"][0]
         self.assertEqual(len(fila["valores"]), len(respuesta.context["columnas"]))
@@ -103,6 +108,88 @@ class RestablecerPasswordTests(PruebaBase):
         self.assertEqual(self.enviar(self.NUEVA).status_code, 403)
 
     def test_restablecer_la_propia_no_cierra_la_sesion(self):
-        url = reverse("empleados:restablecer_password", args=[self.admin.pk])
+        jefe = self.crear_empleado("jefe", "20999888", admin=True)
+        jefe.usuario.is_superuser = True
+        jefe.usuario.save()
+        self.client.force_login(jefe.usuario)
+        url = reverse("empleados:restablecer_password", args=[jefe.pk])
         respuesta = self.enviar(self.NUEVA, url=url)
         self.assertTrue(respuesta.context["user"].is_authenticated)
+
+
+class NivelesDeAccesoTests(PruebaBase):
+    def setUp(self):
+        self.root = Usuario.objects.create_superuser("root", "root@example.test", CLAVE)
+        self.jefa = self.crear_empleado("jefa", "20111222", admin=True)
+        self.otro = self.crear_empleado("otro", "20333444", admin=True)
+        self.ana = self.crear_empleado("ana", "30111222")
+
+    def datos(self, rol, **cambios):
+        return {
+            "username": "nueva", "nombre": "Nueva", "apellido": "Persona",
+            "dni": "33111222", "telefono": "3871234567", "email": "nueva@example.test",
+            "rol": Rol.objects.get(nombre_rol=rol).pk, "direccion": "",
+            "password1": CLAVE, "password2": CLAVE, **cambios,
+        }
+
+    def urls_de(self, empleado):
+        return [
+            reverse(f"empleados:{nombre}", args=[empleado.pk])
+            for nombre in ("empleado_editar", "empleado_estado", "restablecer_password")
+        ]
+
+    def test_el_superusuario_crea_administradores_sin_permisos_de_django(self):
+        self.client.force_login(self.root)
+        respuesta = self.client.post(
+            reverse("empleados:empleado_crear"), self.datos(Rol.ADMINISTRADOR)
+        )
+        self.assertRedirects(respuesta, reverse("empleados:empleados"))
+        usuario = Usuario.objects.get(username="nueva")
+        self.assertTrue(usuario.es_administrador)
+        self.assertFalse(usuario.is_superuser or usuario.is_staff)
+
+    def test_el_superusuario_modifica_administradores(self):
+        self.client.force_login(self.root)
+        for url in self.urls_de(self.jefa):
+            self.assertEqual(self.client.get(url).status_code, 200)
+        datos = self.datos(Rol.EMPLEADO, dni=self.jefa.dni, email="jefa@example.test")
+        self.client.post(self.urls_de(self.jefa)[0], datos)
+        self.assertFalse(Usuario.objects.get(username="jefa").es_administrador)
+
+    def test_un_administrador_no_modifica_administradores_ni_a_si_mismo(self):
+        self.client.force_login(self.jefa.usuario)
+        for empleado in (self.jefa, self.otro):
+            for url in self.urls_de(empleado):
+                with self.subTest(url=url):
+                    self.assertEqual(self.client.get(url).status_code, 403)
+                    self.assertEqual(self.client.post(url).status_code, 403)
+            empleado.refresh_from_db()
+            self.assertTrue(empleado.activo)
+
+    def test_un_administrador_no_asciende_a_un_empleado(self):
+        self.client.force_login(self.jefa.usuario)
+        datos = self.datos(Rol.ADMINISTRADOR, dni=self.ana.dni, email="ana@example.test")
+        respuesta = self.client.post(self.urls_de(self.ana)[0], datos)
+        self.assertIn("rol", respuesta.context["form"].errors)
+        self.ana.refresh_from_db()
+        self.assertFalse(self.ana.rol.es_administrador)
+
+    def test_la_lista_solo_ofrece_acciones_permitidas(self):
+        self.client.force_login(self.jefa.usuario)
+        respuesta = self.client.get(reverse("empleados:empleados"))
+        self.assertContains(respuesta, self.urls_de(self.ana)[0])
+        self.assertNotContains(respuesta, self.urls_de(self.otro)[0])
+        self.assertContains(respuesta, "Solo superusuario")
+
+    def test_solo_el_superusuario_entra_a_admin(self):
+        for usuario, estado in ((self.root, 200), (self.jefa.usuario, 302), (self.ana.usuario, 302)):
+            self.client.force_login(usuario)
+            self.assertEqual(self.client.get("/admin/").status_code, estado)
+
+    def test_el_superusuario_crea_administradores_desde_admin(self):
+        self.client.force_login(self.root)
+        respuesta = self.client.post(
+            reverse("admin:empleados_app_empleado_add"), self.datos(Rol.ADMINISTRADOR)
+        )
+        self.assertEqual(respuesta.status_code, 302)
+        self.assertTrue(Usuario.objects.get(username="nueva").es_administrador)

@@ -11,6 +11,25 @@ from .forms import EmpleadoCrearForm, EmpleadoEditarForm, RestablecerPasswordFor
 from .models import Empleado, Rol
 
 
+class GestionEmpleadoMixin(AdminMixin):
+    """Pantallas sobre un empleado puntual: solo si quien entra puede modificarlo."""
+
+    def test_func(self):
+        if not super().test_func():
+            return False
+        empleado = get_object_or_404(
+            Empleado.objects.select_related("rol", "usuario"), pk=self.kwargs["pk"]
+        )
+        return self.request.user.puede_gestionar(empleado)
+
+
+class FormularioEmpleadoMixin:
+    """El formulario necesita saber quién lo usa para ofrecer los roles permitidos."""
+
+    def get_form_kwargs(self):
+        return {**super().get_form_kwargs(), "usuario_actual": self.request.user}
+
+
 class EmpleadoListView(TablaAdminMixin):
     model = Empleado
     titulo = "Empleados"
@@ -42,11 +61,16 @@ class EmpleadoListView(TablaAdminMixin):
         return (str(obj), obj.usuario.username, obj.dni, obj.rol.nombre_rol, "Activo" if obj.activo else "Inactivo")
 
 
-    def editar_url(self, obj): return reverse_lazy("empleados:empleado_editar", args=[obj.pk])
-    def eliminar_url(self, obj): return reverse_lazy("empleados:empleado_estado", args=[obj.pk])
+    def editar_url(self, obj): return self._url_permitida("empleados:empleado_editar", obj)
+    def eliminar_url(self, obj): return self._url_permitida("empleados:empleado_estado", obj)
+
+    def _url_permitida(self, nombre, obj):
+        if not self.request.user.puede_gestionar(obj):
+            return ""
+        return reverse_lazy(nombre, args=[obj.pk])
 
 
-class EmpleadoCreateView(AdminMixin, GuardarMixin, CreateView):
+class EmpleadoCreateView(AdminMixin, FormularioEmpleadoMixin, GuardarMixin, CreateView):
     model = Empleado
     form_class = EmpleadoCrearForm
     template_name = "componentes/crud_form.html"
@@ -54,7 +78,7 @@ class EmpleadoCreateView(AdminMixin, GuardarMixin, CreateView):
     titulo = "Registrar empleado"
     lista_url = success_url
 
-class EmpleadoUpdateView(AdminMixin, GuardarMixin, UpdateView):
+class EmpleadoUpdateView(GestionEmpleadoMixin, FormularioEmpleadoMixin, GuardarMixin, UpdateView):
     model = Empleado
     form_class = EmpleadoEditarForm
     template_name = "empleados/editar.html"
@@ -62,13 +86,7 @@ class EmpleadoUpdateView(AdminMixin, GuardarMixin, UpdateView):
     titulo = "Editar empleado"
     lista_url = success_url
 
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs["usuario_actual"] = self.request.user
-
-        return kwargs
-
-class RestablecerPasswordView(AdminMixin, FormView):
+class RestablecerPasswordView(GestionEmpleadoMixin, FormView):
     form_class = RestablecerPasswordForm
     template_name = "empleados/restablecer_password.html"
     success_url = reverse_lazy("empleados:empleados")
@@ -106,7 +124,7 @@ class RestablecerPasswordView(AdminMixin, FormView):
         return super().form_valid(form)
 
 
-class EmpleadoEstadoView(AdminMixin, DetailView):
+class EmpleadoEstadoView(GestionEmpleadoMixin, DetailView):
     model = Empleado
     template_name = "componentes/crud_estado.html"
 

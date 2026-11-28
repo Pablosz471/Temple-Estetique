@@ -6,7 +6,11 @@ from .models import Empleado, Rol
 
 
 class EmpleadoBaseForm(forms.ModelForm):
-    """Campos comunes del empleado; el rol solo puede ser Administrador o Empleado."""
+    """Campos comunes del empleado.
+
+    Solo el superusuario puede elegir el rol Administrador. Sin `usuario_actual`
+    se aplica la restricción.
+    """
 
     class Meta:
         model = Empleado
@@ -14,11 +18,13 @@ class EmpleadoBaseForm(forms.ModelForm):
         labels = {"dni": "DNI", "telefono": "Teléfono", "direccion": "Dirección"}
         widgets = {"direccion": forms.Textarea(attrs={"rows": 2})}
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, usuario_actual=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["rol"].queryset = Rol.objects.filter(
-            nombre_rol__in=[Rol.ADMINISTRADOR, Rol.EMPLEADO]
-        )
+        self.usuario_actual = usuario_actual
+        roles = [Rol.EMPLEADO]
+        if usuario_actual is not None and usuario_actual.is_superuser:
+            roles.append(Rol.ADMINISTRADOR)
+        self.fields["rol"].queryset = Rol.objects.filter(nombre_rol__in=roles)
         self.fields["rol"].empty_label = None
 
 
@@ -77,7 +83,6 @@ class EmpleadoCrearForm(EmpleadoBaseForm):
 
     @transaction.atomic
     def save(self, commit=True):
-        es_admin = self.cleaned_data["rol"].es_administrador
         usuario = Usuario.objects.create_user(
             username=self.cleaned_data["username"],
             email=self.cleaned_data["email"],
@@ -86,8 +91,6 @@ class EmpleadoCrearForm(EmpleadoBaseForm):
             last_name=self.cleaned_data["apellido"],
             is_active=True,
             estado=Usuario.Estado.APROBADO,
-            is_superuser=es_admin,
-            is_staff=es_admin,
         )
         empleado = super().save(commit=False)
         empleado.usuario = usuario
@@ -119,9 +122,8 @@ class EmpleadoEditarForm(EmpleadoBaseForm):
 
     field_order = ["nombre", "apellido", "dni", "telefono", "email", "rol", "direccion"]
 
-    def __init__(self, *args, usuario_actual=None, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.usuario_actual = usuario_actual
         self.fields["email"].initial = self.instance.usuario.email
 
     def clean_email(self):
@@ -130,13 +132,6 @@ class EmpleadoEditarForm(EmpleadoBaseForm):
         if otros.filter(email__iexact=valor).exists():
             raise forms.ValidationError("Ese correo ya está registrado.")
         return valor
-
-    def clean_rol(self):
-        rol = self.cleaned_data["rol"]
-        es_uno_mismo = self.usuario_actual and self.instance.usuario_id == self.usuario_actual.pk
-        if es_uno_mismo and not rol.es_administrador:
-            raise forms.ValidationError("No puedes quitarte el rol de Administrador.")
-        return rol
 
     def clean_activo(self):
         activo = self.cleaned_data["activo"]
@@ -152,12 +147,9 @@ class EmpleadoEditarForm(EmpleadoBaseForm):
         empleado.save()
         self.save_m2m()
         usuario = empleado.usuario
-        es_admin = empleado.rol.es_administrador
         usuario.email = self.cleaned_data["email"]
         usuario.first_name = empleado.nombre
         usuario.last_name = empleado.apellido
-        usuario.is_superuser = es_admin
-        usuario.is_staff = es_admin
-        usuario.save(update_fields=["email", "first_name", "last_name", "is_superuser", "is_staff"])
+        usuario.save(update_fields=["email", "first_name", "last_name"])
         
         return empleado
